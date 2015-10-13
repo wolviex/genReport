@@ -67,7 +67,8 @@ def getHDInfo(model):
 			res2 = str(conn.getresponse().read()); 
 			
 			# brand = re.search(r"product_manufacture:\[\\'([\w\d ]*)",res2).group(0);
-			brand = re.search(r"product_manufacture:.*?'([\w\d ]*)'",res2).group(1);
+			
+			brand = re.search(r">Brand<.*?<dd>(.*?)</dd>",res2).group(1);
 			series = re.search(r">Series<.*?<dd>(.*?)</dd>",res2).group(1);
 			interface = re.search(r">Interface<.*?<dd>(.*?)</dd>",res2).group(1);
 			capacity = re.search(r">Capacity<.*?<dd>(.*?)</dd>",res2).group(1);
@@ -96,6 +97,21 @@ def getRealHDBrand(model,brand):
 	except Exception:
 		db.close();
 		return brand;
+	
+def getSmallestStr(r):
+	
+	prd = r;
+	longestStr = -1;
+	prdSearch = re.findall(r"[\w\d]*",prd);
+	for id in range(0,len(prdSearch)):
+		if longestStr < 0:
+			longestStr = id;
+		else:
+			if len(prdSearch[id]) > len(prdSearch[longestStr]):
+				longestStr = id;
+		
+	if longestStr >= 0:
+		prd = str(prdSearch[longestStr]);
 			
 
 def getAsset(serial):
@@ -117,17 +133,17 @@ def getFails(fname):
 	lString = serverlog.read();
 	try:
 		lString = re.findall(r"\*\*[\s\S]*?Test Results.*",lString);
-		fString = "";
+		fString = set()
 		for x in lString:
 			try:
-				fString += re.search("\*\* (.*?) \*\*.*?Fail",x,re.DOTALL).group(1) + "\n";
+				fString.add(re.search("\*\* (.*?) \*\*.*?Fail",x,re.DOTALL).group(1));
 			except AttributeError:
 				continue;
 		
 	except AttributeError:
 		lString = "Fails not found";
 	serverlog.close();
-	return fString;
+	return '\n'.join(fString);
 	
 def getSerial(fname):
 	serverlog = open(fname, 'r');
@@ -222,6 +238,7 @@ def getHarddrives(fname):
 				prd = str(prdSearch[longestStr]);
 				
 			
+			
 			hdTrays[int(tray)] += 1;
 
 			if hdTrays[int(tray)] > 1:
@@ -238,7 +255,7 @@ def getHarddrives(fname):
 		
 		for k,v in HDDS.items():
 			for k2,v2 in HDDS[k].items():
-				hdStringArray.add(getRealHDBrand(str(k2),str(k)) + ": " +  str(k2) + " x" + str(v2) + " ("+getHDInfo(str(k2))+")")
+				hdStringArray.add(getRealHDBrand(str(k2),str(k)) +  " ("+getHDInfo(str(k2))+") x"+str(v2))
 		rString = "\n".join(hdStringArray);
 	except AttributeError:
 		rString = "No HDDs";
@@ -256,35 +273,45 @@ def getTotalRam(fname):
 		ramSpeed = re.search(r"\d*MHz",lString).group(0);
 		
 		rString = re.findall(r"Size.*?: (\d*).*?\n",lString);
-		dimmSize = 0;
-		
+		dimms = {}
 		
 		ramSize = 0;
 		
 		for x in rString:
 			try:
 				ramSize += int(x);
-				if dimmSize == 0:
-					dimmSize = int(x);
+				if int(x) > 0:
+					try:
+						dimms[str(int(int(x)/1000))] += 1
+					except KeyError:
+						dimms[str(int(int(x)/1000))] = 1;
 			except ValueError:
 				continue;
 	except AttributeError:
 		return "Ram not found";
 		
+	dimmStr = ', '.join(['%sGB x%s' % (key, value) for (key, value) in dimms.items()])
 	serverlog.close();
-	return str(ramSize) +"MB "+ramType + " " +ramSpeed + " ("+str(int(dimmSize/1000))+"GB Dimms)";
+	
+	ramStr = ""
+	if ramSize >= 1000:
+		ramStr = str(int(int(ramSize)/1000)) + "GB"
+	else:
+		ramStr = str(ramSize) + "MB"
+	
+	return ramStr +" "+ramType + " " +ramSpeed + " ("+dimmStr+")";
 	
 def formatXML(workbook,worksheet,rnum):
 	cell_format = workbook.add_format({'bold': True});
 	font_format = workbook.add_format();
 	font_format.set_font_size(10);
 	worksheet.set_column(0,2,15);
-	worksheet.set_column(3,3,45,font_format);
+	worksheet.set_column(3,3,50,font_format);
 	worksheet.set_column(4,4,40,font_format);
-	worksheet.set_column(5,5,40,font_format);
+	worksheet.set_column(5,5,50,font_format);
 	worksheet.set_row(0,20,cell_format)
 	for x in range(1,rnum):
-		worksheet.set_row(x,55);
+		worksheet.set_row(x,53);
 		
 	worksheet.write(0,0, "Service Tag");
 	worksheet.write(0,1, "Asset");
@@ -302,9 +329,9 @@ def genXML(rnum):
 	return workbook;
 	
 def genInfo(fname):
-	ret = getProcInfo(fname) + "\n"
-	ret += getTotalRam(fname) + "\n"
-	ret += getCtlr(fname) + "\n"
+	ret = getProcInfo(fname) + ",\n"
+	ret += getTotalRam(fname) + ",\n"
+	ret += getCtlr(fname) + ",\n"
 	ret += getHarddrives(fname);
 	
 	return ret;
