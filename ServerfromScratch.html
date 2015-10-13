@@ -102,12 +102,9 @@
 				</div>
 				<div class="picture_wrapper" id="ebay_pictures">
 						<!--PreImage-->
-						{% for image in images%}
-                                                   
-                          
-                          	<a href="javascript:;" onclick="document.getElementById('rf_mainimage'). src = '{{ image | image_size:'600px' }}';" style="border:none;"> <img border="0" src="{{ image | image_size:'600px' }}" style="max-width:132px;margin-bottom:10px;margin-left:10px;display:inline" /> </a> 
-                          
-						{% endfor %}
+
+							{{ image src }}						
+						
 						<!--PostImage-->
 				</div>
 				<p style="text-align: center;">
@@ -181,7 +178,9 @@
 						We have a large assortment of refurbished neworking equipment; Feel free to inquire about availability on any other items!
 					</p>
 					<p style="text-align: center;">
-					[STORE_WINDOW]	
+					<!-- Pre-widget-->
+					{{ Widget for other items }}
+					<!-- Post-widget-->	
 					</p>
 				</div>
 				<div style="clear:both;"></div>
