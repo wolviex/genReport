@@ -29,10 +29,21 @@ def createTable(db):
 	c.execute("CREATE TABLE 'harddrives' (brand text, series text, model text, interface text, capacity text, speed text, cache text, formfactor text)")
 	db.commit()
 	
-
+def getRecentLog(logStr):
+	recent = logStr.split("NEWLOGSTART")[-1]
+	
+	return recent
+	
+def getREGEX(regex, string, g):
+	search = re.search(regex,string)
+	if search is not None:
+		return search.group(g)
+	else:
+		return "Not found"
+		
 #sql order
 # brand text, series text, model text, interface text, capacity text, speed text, cache text, formfactor text
-def getHDInfo(model):
+def getHDInfo(model,fname):
 
 
 	
@@ -68,14 +79,20 @@ def getHDInfo(model):
 			
 			# brand = re.search(r"product_manufacture:\[\\'([\w\d ]*)",res2).group(0);
 			
-			brand = re.search(r">Brand<.*?<dd>(.*?)</dd>",res2).group(1);
-			series = re.search(r">Series<.*?<dd>(.*?)</dd>",res2).group(1);
-			interface = re.search(r">Interface<.*?<dd>(.*?)</dd>",res2).group(1);
-			capacity = re.search(r">Capacity<.*?<dd>(.*?)</dd>",res2).group(1);
-			speed = re.search(r">RPM<.*?<dd>(.*?)</dd>",res2).group(1);
-			cache = re.search(r">Cache<.*?<dd>(.*?)</dd>",res2).group(1);
-			formfactor = re.search(r">Form Factor<.*?<dd>(.*?)</dd>",res2).group(1);
-			# price = re.search(r"product_unit_price:\[\\'([\d\.]*)",res2).group(1);
+			
+			
+				
+			
+			brand = getREGEX(r">Brand<.*?<dd>(.*?)</dd>",res2,1)
+			series = getREGEX(r">Series<.*?<dd>(.*?)</dd>",res2,1)
+			interface = getREGEX(r">Interface<.*?<dd>(.*?)</dd>",res2,1)
+			capacity = getREGEX(r">Capacity<.*?<dd>(.*?)</dd>",res2,1)
+			speed = getREGEX(r">RPM<.*?<dd>(.*?)</dd>",res2,1)
+			cache = getREGEX(r">Cache<.*?<dd>(.*?)</dd>",res2,1)
+			formfactor = getREGEX(r">Form Factor<.*?<dd>(.*?)</dd>",res2,1)
+			
+			if interface == "None":
+				interface = getHDInterface(fname)
 			
 			c.execute("INSERT INTO harddrives VALUES ('"+brand+"', '"+series+"', '"+model+"', '"+interface+"', '"+capacity+"', '"+speed+"', '"+cache+"', '"+formfactor+"')")
 			db.commit();
@@ -130,7 +147,7 @@ def getAsset(serial):
 
 def getFails(fname):
 	serverlog = open(fname, 'r');
-	lString = serverlog.read();
+	lString = getRecentLog(serverlog.read());
 	try:
 		lString = re.findall(r"\*\*[\s\S]*?Test Results.*",lString);
 		fString = set()
@@ -147,13 +164,20 @@ def getFails(fname):
 	
 def getSerial(fname):
 	serverlog = open(fname, 'r');
-	lString = serverlog.read();
+	lString = getRecentLog(serverlog.read());
 	try:
 		lString = re.search(r"System Information.*?Serial Number.*?: (.*?)\n.*?Family Name",lString,re.MULTILINE | re.DOTALL).group(1);
 	except AttributeError:
 		lString = "Serial not found";
 	serverlog.close();
 	return lString;
+
+def getLogPath(fname):
+	for root, dirs, files in os.walk("/srv/testdata/joeservers/dell"):
+		for file in files:
+			if file.lower() == fname.lower():
+				print(os.path.join(root, file));
+				return os.path.join(root, file);	
 	
 def getLogFromFTP(fname):
 	serverlog = open(fname, 'wb');
@@ -169,7 +193,7 @@ def getLogFromFTP(fname):
 	
 def getCtlr(fname):
 	serverlog = open(fname, 'r');
-	lString = serverlog.read();
+	lString = getRecentLog(serverlog.read());
 	try:
 		lString = re.search(r"Ctlr\n-*?\n(.*?),",lString,re.MULTILINE | re.DOTALL).group(1);
 	except AttributeError:
@@ -179,7 +203,7 @@ def getCtlr(fname):
 	
 def getModel(fname):
 	serverlog = open(fname, 'r');
-	lString = serverlog.read();
+	lString = getRecentLog(serverlog.read());
 	try:
 		lString = re.search(r"System Information.*?Product Name.*?: (.*?)\n.*?Family Name",lString,re.MULTILINE | re.DOTALL).group(1);
 	except AttributeError:
@@ -192,11 +216,13 @@ def getProcInfo(fname):
 	
 	cpuDict = {}
 	ret = "";
-	lString = serverlog.read();
+	lString = getRecentLog(serverlog.read());
 	try:
 		lString = re.search(r"Processor Information.*?System Information",lString,flags=re.MULTILINE | re.DOTALL).group(0);
 		lString = re.findall(r"\nVersion.*?: (.*?)\n",lString);
 		for x in lString:
+			if x == "N/A":
+				continue
 			try:
 				cpuDict[x] += 1
 			except KeyError:
@@ -209,9 +235,18 @@ def getProcInfo(fname):
 	serverlog.close();
 	return " ".join(ret.split());
 
+def getHDInterface(fname):
+	serverlog = open(fname, 'r');
+	lString = getRecentLog(serverlog.read());
+	lString = re.search(r"\n(\w*?) [0-9\-]*? Disk\n.*?-*?\n.*?Encryption",lString,re.MULTILINE | re.DOTALL);
+	return lString.group(1)
+		
+			
+	
+	
 def getHarddrives(fname):
 	serverlog = open(fname, 'r');
-	lString = serverlog.read();
+	lString = getRecentLog(serverlog.read());
 
 	lString = re.findall(r"\n\w*? [0-9\-]*? Disk\n.*?-*?\n.*?Encryption",lString,re.MULTILINE | re.DOTALL);
 	
@@ -237,7 +272,7 @@ def getHarddrives(fname):
 			if longestStr >= 0:
 				prd = str(prdSearch[longestStr]);
 				
-			
+			print(prd)
 			
 			hdTrays[int(tray)] += 1;
 
@@ -255,7 +290,7 @@ def getHarddrives(fname):
 		
 		for k,v in HDDS.items():
 			for k2,v2 in HDDS[k].items():
-				hdStringArray.add(getRealHDBrand(str(k2),str(k)) +  " ("+getHDInfo(str(k2))+") x"+str(v2))
+				hdStringArray.add(getRealHDBrand(str(k2),str(k)) +  " ("+getHDInfo(str(k2),fname)+") x"+str(v2))
 		rString = "\n".join(hdStringArray);
 	except AttributeError:
 		rString = "No HDDs";
@@ -265,7 +300,7 @@ def getHarddrives(fname):
 	
 def getTotalRam(fname):
 	serverlog = open(fname, 'r');
-	lString = serverlog.read();
+	lString = getRecentLog(serverlog.read());
 	try:
 		lString = re.search(r"Memory Information \*\*.*?\*\*",lString,re.MULTILINE | re.DOTALL).group(0);
 		
@@ -364,10 +399,9 @@ workbook = genXML(len(assets));
 
 for x in assets:
 	try:
-		getLogFromFTP(x);
-		addServer(workbook,x, index);
+		logpath = getLogPath(x)
+		addServer(workbook,logpath, index);
 		index += 1;	
-		os.remove(x);
 		
 	except Exception:
 		print(traceback.print_exc());
