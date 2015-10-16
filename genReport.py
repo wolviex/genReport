@@ -93,30 +93,31 @@ def getHDInfo(model,fname):
 			conn = httplib.HTTPConnection('www.newegg.com');
 			conn.request("GET", "/Product/ProductList.aspx?Submit=ENE&DEPA=0&Order=BESTMATCH&Description="+model+"&N=-1&isNodeId=1");
 			res = str(conn.getresponse().read()); 
-			link = re.search(r"<a href=\"\S*\.com(\S*)\" title=\"View Details\"",res).group(1);
+			link = ""
+			links = re.findall(r'<a.*?title="(.*?{0}.*?)".*?href="(.*?{0}.*?)"'.format(model), res,re.IGNORECASE)
+			if len(links) > 1:
+				print("Found more than 1 of the same HDD, looking for Enterprise edition...")
+				enterprise = False
+				for x,y in links:
+					if x.lower().find("enterprise") >= 0:
+						print("Found Enterprise edition")
+						enterprise = True
+						link = y
+						break
+				if not enterprise:
+					print("Enterprise edition not found. Using first link")
+					link = links[0][1]
+			else:
+				link = links[0][1]
+
+
+
 			#Make sure the model is in the link
 			re.search(model,link).group(0);
 			conn.request("GET",link);
-			res2 = str(conn.getresponse().read()); 
-			
-			
-			
+			res2 = str(conn.getresponse().read()); 			
 			infoFields = ("Brand","Series","Interface","Capacity","RPM","Cache","Form Factor")
-
 			infoDict = OrderedDict((x, getREGEX(model,r">%s<.*?<dd>(.*?)</dd>" % x,res2,1)) for x in infoFields)
-				
-			
-			#brand = getREGEX(model,r">Brand<.*?<dd>(.*?)</dd>",res2,1)
-			#series = getREGEX(model,r">Series<.*?<dd>(.*?)</dd>",res2,1)
-			#interface = getREGEX(model,r">Interface<.*?<dd>(.*?)</dd>",res2,1)
-			#capacity = getREGEX(model,r">Capacity<.*?<dd>(.*?)</dd>",res2,1)
-			#speed = getREGEX(model,r">RPM<.*?<dd>(.*?)</dd>",res2,1)
-			#cache = getREGEX(model,r">Cache<.*?<dd>(.*?)</dd>",res2,1)
-			#formfactor = getREGEX(model,r">Form Factor<.*?<dd>(.*?)</dd>",res2,1)
-			
-			#if interface == "None":
-			#	interface = getHDInterface(fname)
-			#c.execute("INSERT INTO harddrives VALUES ('"+brand+"', '"+series+"', '"+model+"', '"+interface+"', '"+capacity+"', '"+speed+"', '"+cache+"', '"+formfactor+"')")
 			c.execute("INSERT INTO harddrives VALUES ('{0}', '{1}', '{7}', '{2}','{3}', '{4}', '{5}', '{6}')".format(*(tuple(x for (k,x) in infoDict.items())+(model,))))
 			db.commit();
 			db.close();
