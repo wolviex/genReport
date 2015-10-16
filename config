@@ -1,0 +1,3 @@
+ServerPath=/srv/testdata/joeservers/dell/;
+DBPath=/srv/testdata/joeservers/hdDatabase.db;
+XLPath=/srv/testdata/joeservers/report.xlsx;

@@ -1,4 +1,4 @@
-import xlsxwriter
+﻿import xlsxwriter
 import re
 import xlrd
 import sys
@@ -8,6 +8,7 @@ import os;
 from ftplib import FTP
 import sqlite3;
 import traceback;
+from collections import OrderedDict
 
 #Python version specific imports
 try:
@@ -15,7 +16,8 @@ try:
 except ImportError:
 	import httplib;
 	
-
+Config = {}
+	
 def hasDBTable(db):
 	c = db.cursor();
 	c.execute("SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name = 'harddrives'")
@@ -34,13 +36,32 @@ def getRecentLog(logStr):
 	
 	return recent
 	
-def getREGEX(regex, string, g):
+def getREGEX(model,regex, string, g):
 	search = re.search(regex,string)
+	if re.search(r">(.*?)<", regex).group(1) == "Model":
+		return model
+
 	if search is not None:
 		return search.group(g)
 	else:
-		return "Not found"
+		infoField = re.search(r">(.*?)<", regex).group(1)
+
+
+		print("%s: Could not find info for %s. Would you like to add? (y/n)" % (model,infoField) )
+		line = sys.stdin.readline().rstrip().lower()
+		if line == "y":
+			print("Enter info for "+infoField)
+			line = sys.stdin.readline().rstrip()
+			return line
 		
+		return "Not found"
+
+def enterHDInfo(model):
+	print("Could not find info for %s. Would you like to add?" % model)
+	line = sys.stdin.readline().rstrip().lower()
+   # if line == "y":
+
+
 #sql order
 # brand text, series text, model text, interface text, capacity text, speed text, cache text, formfactor text
 def getHDInfo(model,fname):
@@ -49,7 +70,7 @@ def getHDInfo(model,fname):
 	
 	
 	addHDtoDB = False;
-	db = sqlite3.connect("hdDatabase.db");
+	db = sqlite3.connect(Config["DBPath"]);
 	
 	if hasDBTable(db) == False:
 		print("Harddrive table not found. Creating.")
@@ -60,6 +81,7 @@ def getHDInfo(model,fname):
 	
 	try:
 		c.execute("SELECT * FROM harddrives WHERE model='"+model+"'");
+		
 		hdData = c.fetchone();
 		return hdData[4] + ", "+hdData[5] + ", " + hdData[7];
 	except Exception:
@@ -77,27 +99,28 @@ def getHDInfo(model,fname):
 			conn.request("GET",link);
 			res2 = str(conn.getresponse().read()); 
 			
-			# brand = re.search(r"product_manufacture:\[\\'([\w\d ]*)",res2).group(0);
 			
 			
-			
+			infoFields = ("Brand","Series","Interface","Capacity","RPM","Cache","Form Factor")
+
+			infoDict = OrderedDict((x, getREGEX(model,r">%s<.*?<dd>(.*?)</dd>" % x,res2,1)) for x in infoFields)
 				
 			
-			brand = getREGEX(r">Brand<.*?<dd>(.*?)</dd>",res2,1)
-			series = getREGEX(r">Series<.*?<dd>(.*?)</dd>",res2,1)
-			interface = getREGEX(r">Interface<.*?<dd>(.*?)</dd>",res2,1)
-			capacity = getREGEX(r">Capacity<.*?<dd>(.*?)</dd>",res2,1)
-			speed = getREGEX(r">RPM<.*?<dd>(.*?)</dd>",res2,1)
-			cache = getREGEX(r">Cache<.*?<dd>(.*?)</dd>",res2,1)
-			formfactor = getREGEX(r">Form Factor<.*?<dd>(.*?)</dd>",res2,1)
+			#brand = getREGEX(model,r">Brand<.*?<dd>(.*?)</dd>",res2,1)
+			#series = getREGEX(model,r">Series<.*?<dd>(.*?)</dd>",res2,1)
+			#interface = getREGEX(model,r">Interface<.*?<dd>(.*?)</dd>",res2,1)
+			#capacity = getREGEX(model,r">Capacity<.*?<dd>(.*?)</dd>",res2,1)
+			#speed = getREGEX(model,r">RPM<.*?<dd>(.*?)</dd>",res2,1)
+			#cache = getREGEX(model,r">Cache<.*?<dd>(.*?)</dd>",res2,1)
+			#formfactor = getREGEX(model,r">Form Factor<.*?<dd>(.*?)</dd>",res2,1)
 			
-			if interface == "None":
-				interface = getHDInterface(fname)
-			
-			c.execute("INSERT INTO harddrives VALUES ('"+brand+"', '"+series+"', '"+model+"', '"+interface+"', '"+capacity+"', '"+speed+"', '"+cache+"', '"+formfactor+"')")
+			#if interface == "None":
+			#	interface = getHDInterface(fname)
+			#c.execute("INSERT INTO harddrives VALUES ('"+brand+"', '"+series+"', '"+model+"', '"+interface+"', '"+capacity+"', '"+speed+"', '"+cache+"', '"+formfactor+"')")
+			c.execute("INSERT INTO harddrives VALUES ('{0}', '{1}', '{7}', '{2}','{3}', '{4}', '{5}', '{6}')".format(*(tuple(x for (k,x) in infoDict.items())+(model,))))
 			db.commit();
 			db.close();
-			return capacity + ", "+speed+ ", "+formfactor;
+			return '%s, %s, %s' % (infoDict['Capacity'], infoDict['RPM'], infoDict['Form Factor'])
 		except AttributeError:
 			print(traceback.print_exc());
 			return "No HDD Info found";
@@ -173,23 +196,12 @@ def getSerial(fname):
 	return lString;
 
 def getLogPath(fname):
-	for root, dirs, files in os.walk("/srv/testdata/joeservers/dell"):
+	for root, dirs, files in os.walk(Config["ServerPath"]):
 		for file in files:
 			if file.lower() == fname.lower():
 				print(os.path.join(root, file));
 				return os.path.join(root, file);	
 	
-def getLogFromFTP(fname):
-	serverlog = open(fname, 'wb');
-	ftp = FTP('172.17.8.22');
-	ftp.login('diag','diag');
-	ftp.cwd('dell');
-	ftp.cwd('upload');
-	ftp.retrbinary('RETR ' + fname, serverlog.write);
-	ftp.quit();
-	serverlog.close();
-	return;
-
 	
 def getCtlr(fname):
 	serverlog = open(fname, 'r');
@@ -272,25 +284,26 @@ def getHarddrives(fname):
 			if longestStr >= 0:
 				prd = str(prdSearch[longestStr]);
 				
-			print(prd)
+			
 			
 			hdTrays[int(tray)] += 1;
 
 			if hdTrays[int(tray)] > 1:
 				continue;
+
+			#print(prd + " " +tray)
 			
 			try:
-				HDDS[mnf][prd] += 1;
+				HDDS[(mnf,prd)] += 1;
 			except KeyError:
-				HDDS[mnf] = {};
-				HDDS[mnf][prd] = 1;
+				HDDS[(mnf,prd)] = 1;
 				
 				
 		hdStringArray = set();
 		
 		for k,v in HDDS.items():
-			for k2,v2 in HDDS[k].items():
-				hdStringArray.add(getRealHDBrand(str(k2),str(k)) +  " ("+getHDInfo(str(k2),fname)+") x"+str(v2))
+			print(k[0] + " "+k[1])
+			hdStringArray.add(getRealHDBrand(str(k[1]),str(k[0])) +  " ("+getHDInfo(str(k[1]),fname)+") x"+str(v))
 		rString = "\n".join(hdStringArray);
 	except AttributeError:
 		rString = "No HDDs";
@@ -358,7 +371,7 @@ def formatXML(workbook,worksheet,rnum):
 	return;
 	
 def genXML(rnum):
-	workbook = xlsxwriter.Workbook('report.xlsx')
+	workbook = xlsxwriter.Workbook(Config["XLPath"])
 	worksheet = workbook.add_worksheet();
 	formatXML(workbook,worksheet,rnum);
 	return workbook;
@@ -382,7 +395,16 @@ def addServer(workbook, fname, index):
 	worksheet.write(index,3, genInfo(fname));
 	worksheet.write(index,5, getFails(fname));
 
-
+def loadGlobalVars():
+	realpath = os.path.dirname(os.path.realpath(sys.argv[0]))
+	cfile = open(realpath + "/config","r")
+	conf = cfile.read()
+	c = re.findall(r"(\w*)=(.*?);",conf)
+	
+	for x in c:
+		Config[x[0]] = x[1]
+	
+loadGlobalVars()
 assets = set();
 index = 0;
 print("Scan or type the serial numbers now. Return a blank line when finished")
