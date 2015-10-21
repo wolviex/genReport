@@ -1,5 +1,6 @@
 ﻿import xlsxwriter
 import re
+import curses
 import xlrd
 import sys
 import array;
@@ -9,6 +10,7 @@ from ftplib import FTP
 import sqlite3;
 import traceback;
 from collections import OrderedDict
+from sql_ui import SQLGui
 
 #Python version specific imports
 try:
@@ -17,7 +19,10 @@ except ImportError:
 	import httplib;
 	
 Config = {}
-	
+
+def getInfoFields():
+	return ("Brand","Series","Interface","Capacity","RPM","Cache","Form Factor")
+
 def hasDBTable(db):
 	c = db.cursor();
 	c.execute("SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name = 'harddrives'")
@@ -38,23 +43,25 @@ def getRecentLog(logStr):
 	
 def getREGEX(model,regex, string, g):
 	search = re.search(regex,string)
-	if re.search(r">(.*?)<", regex).group(1) == "Model":
-		return model
-
 	if search is not None:
 		return search.group(g)
 	else:
 		infoField = re.search(r">(.*?)<", regex).group(1)
 
-
-		print("%s: Could not find info for %s. Would you like to add? (y/n)" % (model,infoField) )
+		return getManualInfo(model,infoField)
+		
+def getManualInfo(model, infoField):
+	print("%s: Could not find info for %s. Would you like to add? (y/n)" % (model,infoField) )
+	try:
 		line = sys.stdin.readline().rstrip().lower()
 		if line == "y":
 			print("Enter info for "+infoField)
 			line = sys.stdin.readline().rstrip()
 			return line
-		
-		return "Not found"
+	except Exception:
+			print("Invalid input")
+			return getManualInfo(model,infoField)
+
 
 def enterHDInfo(model):
 	print("Could not find info for %s. Would you like to add?" % model)
@@ -116,7 +123,7 @@ def getHDInfo(model,fname):
 			re.search(model,link).group(0);
 			conn.request("GET",link);
 			res2 = str(conn.getresponse().read()); 			
-			infoFields = ("Brand","Series","Interface","Capacity","RPM","Cache","Form Factor")
+			infoFields = getInfoFields()
 			infoDict = OrderedDict((x, getREGEX(model,r">%s<.*?<dd>(.*?)</dd>" % x,res2,1)) for x in infoFields)
 			c.execute("INSERT INTO harddrives VALUES ('{0}', '{1}', '{7}', '{2}','{3}', '{4}', '{5}', '{6}')".format(*(tuple(x for (k,x) in infoDict.items())+(model,))))
 			db.commit();
@@ -404,17 +411,43 @@ def loadGlobalVars():
 	
 	for x in c:
 		Config[x[0]] = x[1]
+
+def makeSQLGui():
+	scrn = SQLGui(Config["DBPath"])
 	
 loadGlobalVars()
 assets = set();
+
+
+
+for argc in sys.argv:
+	if argc == sys.argv[0]: #Quick hack to stop it from getting the script name
+		continue
+
+	if argc == "-?":
+		print("Usage: TODO "+argc)
+	elif argc == "-sql":
+		makeSQLGui()
+		
+	else:
+		logFile = argc[0:argc.find(".txt")] + ".txt"
+		print(logFile)
+		assets.add(logFile)
+
+
+
+
+
+
 index = 0;
-print("Scan or type the serial numbers now. Return a blank line when finished")
-while True:
-    line = sys.stdin.readline();
-    if line == '\n':
-        break
-    else:
-        assets.add(line.rstrip() + ".txt");
+if len(assets) <= 0:
+	print("Scan or type the serial numbers now. Return a blank line when finished")
+	while True:
+		line = sys.stdin.readline();
+		if line == '\n':
+			break
+		else:
+			assets.add(line.rstrip() + ".txt");
 
 
 
