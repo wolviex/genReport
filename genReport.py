@@ -430,9 +430,12 @@ for argc in sys.argv:
 		makeSQLGui()
 		
 	else:
-		logFile = argc[0:argc.find(".txt")] + ".txt"
+		if argc.find(".txt") > 0:
+			logFile = argc[0:argc.find(".txt")] + ".txt"
+		else:
+			logFile = argc + ".txt"
 		print(logFile)
-		assets.add(logFile)
+		assets.add(str(logFile))
 
 
 
@@ -456,6 +459,11 @@ workbook = genXML(len(assets));
 for x in assets:
 	try:
 		logpath = getLogPath(x)
+
+		if logpath is None:
+			print("Error: {} not found.".format(x))
+			continue
+		
 		addServer(workbook,logpath, index);
 		index += 1;	
 		
