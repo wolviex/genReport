@@ -3,6 +3,7 @@ import locale
 import sqlite3
 import sys
 import array;
+import re
 
 class SQLGui:
 
@@ -84,11 +85,19 @@ class SQLGui:
 
 	def SQLSaveChanges(self,model,tableName,data):
 		connection = sqlite3.connect(self.SQL_Path)
-		cursor = connection.execute('UPDATE harddrives SET {}="{}" WHERE model="{}"'.format(tableName,data,model))
+		model = model.replace("'","''")
+		data = data.replace("'","''")
+		execStr = 'UPDATE harddrives SET {}=\'{}\' WHERE model=\'{}\''.format(tableName,data,model)
+		cursor = connection.execute(execStr)
 		connection.commit()
 		connection.close()
 
 	def SQLCreateRow(self,data):
+
+		for i in range(0,len(data)):
+			data[i] = data[i].replace("'", "''")
+			data[i] = '\'{}\''.format(data[i])
+
 		connection = sqlite3.connect(self.SQL_Path)
 		cursor = connection.execute('INSERT INTO harddrives VALUES({})'.format(",".join(data)))
 		connection.commit()
@@ -203,7 +212,6 @@ class SQLGui:
 				info = info.rstrip()
 				if info == "":
 					info = "None"
-				info = '"{}"'.format(info)
 				dataFields.append(info)
 			while True:
 				if not invalidSel:
