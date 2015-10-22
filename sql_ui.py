@@ -2,6 +2,7 @@
 import locale
 import sqlite3
 import sys
+import array;
 
 class SQLGui:
 
@@ -87,9 +88,9 @@ class SQLGui:
 		connection.commit()
 		connection.close()
 
-	def SQLCreateRow(self,model):
+	def SQLCreateRow(self,data):
 		connection = sqlite3.connect(self.SQL_Path)
-		cursor = connection.execute('INSERT INTO harddrives VALUES("","","{}","","","","","")'.format(model))
+		cursor = connection.execute('INSERT INTO harddrives VALUES({})'.format(",".join(data)))
 		connection.commit()
 		connection.close()
 
@@ -189,23 +190,30 @@ class SQLGui:
 					invalidSel = True
 		elif self.newMode:
 			invalidSel = False
-			newStr = "Enter model:"
-			border.addstr(1,1,newStr)
-			self.infoField.mvwin(self.screen.getmaxyx()[0]-1,1+len(newStr))
-			border.refresh()
-			self.infoField.refresh()
-			tb = curses.textpad.Textbox(self.infoField)
-			modelName = tb.edit()
-			modelName = modelName.rstrip()
+			dataFields = []
+			for i in range(0,len(names)):
+				newStr = "{}:".format(names[i])
+				border.addstr(1,1,newStr)
+				self.infoField.clear()
+				self.infoField.mvwin(self.screen.getmaxyx()[0]-1,1+len(newStr))
+				border.refresh()
+				self.infoField.refresh()
+				tb = curses.textpad.Textbox(self.infoField)
+				info = tb.edit()
+				info = info.rstrip()
+				if info == "":
+					info = "None"
+				info = '"{}"'.format(info)
+				dataFields.append(info)
 			while True:
 				if not invalidSel:
-					border.addstr(1,1,"Are you sure you want to add model: {}? (y/n)".format(modelName))
+					border.addstr(1,1,"Are you sure you want to add model: {}? (y/n)".format(dataFields[names.index("model")]))
 				else:
-					border.addstr(1,1,"Invalid selection. Are you sure you want to add model: {}? (y/n)".format(modelName))
+					border.addstr(1,1,"Invalid selection. Are you sure you want to add model: {}? (y/n)".format(dataFields[names.index("model")]))
 				border.refresh()
 				c = self.screen.getch()
 				if curses.keyname(c).lower() == "y":
-					self.SQLCreateRow(modelName)
+					self.SQLCreateRow(dataFields)
 					self.SQLData = self.SQLGetData()
 					self.newMode = False
 					self.createTable()
