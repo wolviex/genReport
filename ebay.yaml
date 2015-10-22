@@ -1,0 +1,34 @@
+# eBay SDK Defaults
+
+name: ebay_api_config
+
+# Trading API Sandbox - https://www.x.com/developers/ebay/products/trading-api
+api.sandbox.ebay.com:
+    compatability: 719
+    appid: JesseWat-67ba-4524-861d-4852beacadc1
+    certid: 885efc2c-9168-442b-a370-87b1d7443387
+    devid: 2a98e29f-ab62-4b63-8da3-035ab50edd9b
+    token: AgAAAA**AQAAAA**aAAAAA**OFodVg**nY+sHZ2PrBmdj6wVnY+sEZ2PrA2dj6wFk4GhDpKGpQWdj6x9nY+seQ**nJcDAA**AAMAAA**oR5cToCx84gPt09mLHalV7cMeD3yi+KN1KQQS/46xx5N0f6snE9kAtkjKhLSUoX7lDu6E3VLj5LWSfQj3kP8s+MQ8gro0Ma81/Z1zpuBXUlLF4c493Z1vI7dSexvmtPmBZzKNat7/kHizVryXYoEJ1B0mUZYlAMwR6NOfvmkb7VS0O5QNugrxEhIkJcaaLaGsiyBSz0rWxZtSJk2YK1DuTTfEPNKDMcqApOg0O44HNsvCXTXkghs6QMnSMYuaQHQTwzg4uE6j0AyD3av3ilFjLI4+ZnSwZUt3TYB1MHQ64xyI3q4MK2MPnZhUuMT/FWphy+fQVXIlCjDrLGrXaKe2rNt/7bdPThEqLOgxLYFOFBm3iL3T4fQ1WE9dssYMrYzpcy4Wydy7a3xSmEeG7u5KeNdW9DJsrXSIlyyJMBhXjK+wknLMWYqmTJuAgcPF9JMdGo+3XHUYr5VtSU+5k8o6jQhoQTbEXth8E3thhMWj4xhaACS3+G5BiiAIK5fT+xO9RvCD7IyisGLZnCUg1t3dsT6XNgNGU1DjL2SuA48UfGozV1luhtJIbLxlRlKv092qITnElCw/Bcat79fW3HV+Cq/lAsi3EIwMl+DblWVI4k8CMcpQtKfMdNfxMZmUajZR0r37dEa4cPSsEJ8d2KdM4j0C+Y7OT+rkK9ZpIus2c2vEsTrYua4TsP6dOejKRl2cQvLRu0iZgyJlVG7Pn/c39b7+TEe37M6s+n6pMJKF1WG+/e2SmIRu73VlMx+fs6Y
+
+# # Trading API - https://www.x.com/developers/ebay/products/trading-api
+# api.ebay.com:
+    # version: 719
+    # appid: ENTER_YOUR_APPID_HERE
+    # certid: ENTER_YOUR_CERTID_HERE
+    # devid: ENTER_YOUR_DEVID_HERE
+    # token: ENTER_YOUR_TOKEN_HERE
+
+# # Finding API - https://www.x.com/developers/ebay/products/finding-api
+# svcs.ebay.com:
+    # appid: ENTER_YOUR_APPID_HERE
+    # version: 1.0.0
+
+# # Shopping API - https://www.x.com/developers/ebay/products/shopping-api
+# open.api.ebay.com:
+    # appid: ENTER_YOUR_APPID_HERE
+    # version: 671
+
+    # # Optional affiliate tracking
+    # # http://developer.ebay.com/DevZone/shopping/docs/Concepts/ShoppingAPI_FormatOverview.html#StandardURLParameters
+    # trackingid: ENTER_YOUR_TRACKINGID_HERE
+    # trackingpartnercode: ENTER_YOUR_PARTNERCODE_HERE 

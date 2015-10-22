@@ -85,7 +85,7 @@ def getHDInfo(model,fname):
 		c.execute("SELECT * FROM harddrives WHERE model='"+model+"'");
 		
 		hdData = c.fetchone();
-		return hdData[4] + ", "+hdData[5] + ", " + hdData[7];
+		return hdData[4],hdData[5],hdData[7];
 	except Exception:
 		print("Adding "+model+" to database.")
 		addHDtoDB = True;
@@ -123,7 +123,7 @@ def getHDInfo(model,fname):
 			c.execute("INSERT INTO harddrives VALUES ('{0}', '{1}', '{7}', '{2}','{3}', '{4}', '{5}', '{6}')".format(*(tuple(x for (k,x) in infoDict.items())+(model,))))
 			db.commit();
 			db.close();
-			return '%s, %s, %s' % (infoDict['Capacity'], infoDict['RPM'], infoDict['Form Factor'])
+			return infoDict['Capacity'], infoDict['RPM'], infoDict['Form Factor']
 		except AttributeError:
 			print(traceback.print_exc());
 			return "No HDD Info found";
@@ -305,14 +305,13 @@ def getHarddrives(fname):
 		hdStringArray = set();
 		
 		for k,v in HDDS.items():
-			print(k[0] + " "+k[1])
-			hdStringArray.add(getRealHDBrand(str(k[1]),str(k[0])) +  " ("+getHDInfo(str(k[1]),fname)+") x"+str(v))
-		rString = "\n".join(hdStringArray);
+			hdStringArray.add((getRealHDBrand(str(k[1]),str(k[0])),)+getHDInfo(str(k[1]),fname)+(str(v),))
+		
 	except AttributeError:
-		rString = "No HDDs";
+		return None
 	if len(lString) <= 0:
-		rString = "No HDDs";
-	return rString;
+		return None
+	return hdStringArray;
 	
 def getTotalRam(fname):
 	serverlog = open(fname, 'r');
@@ -339,7 +338,7 @@ def getTotalRam(fname):
 			except ValueError:
 				continue;
 	except AttributeError:
-		return "Ram not found";
+		return None
 		
 	dimmStr = ', '.join(['%sGB x%s' % (key, value) for (key, value) in dimms.items()])
 	serverlog.close();
@@ -350,8 +349,43 @@ def getTotalRam(fname):
 	else:
 		ramStr = str(ramSize) + "MB"
 	
-	return ramStr +" "+ramType + " " +ramSpeed + " ("+dimmStr+")";
+	return ramStr,ramType,ramSpeed,dimmStr;
 	
+def getNumHarddrives(HDarray):
+	HDdict = {}
+
+	for HD in HDarray:
+		if HDdict.has_key(HD[1]):
+			HDdict[HD[1]] += HD[4]
+		else:
+			HDdict[HD[1]] = HD[4]
+	return " ".join(["{} x{}".format(k,v) for k,v in HDdict.items()])
+
+def getFullHDString(HDarray):
+	HDset = []
+	
+	if HDarray is None:
+		return "No HDD's"
+
+	for HD in HDarray:
+		HDset.append("{} ({}, {}, {}) x{}".format(*HD))
+
+	return "\n".join(HDset)
+
+def genInfo(fname):
+
+	ramInfo = getTotalRam(fname)
+	ret = getProcInfo(fname) + ",\n"
+	if ramInfo is not None:
+		ret += "{} {} {} ({}),\n".format(*ramInfo)
+	else:
+		ret += "No RAM Found\n"
+	ret += getCtlr(fname) + ",\n"
+
+	ret += getFullHDString(getHarddrives(fname))
+	
+	return ret;
+
 def loadGlobalVars():
 	realpath = os.path.dirname(os.path.realpath(sys.argv[0]))
 	cfile = open(realpath + "/config","r")

@@ -39,13 +39,7 @@ def genXML(rnum):
 	formatXML(workbook,worksheet,rnum);
 	return workbook;
 	
-def genInfo(fname):
-	ret = LogReader.getProcInfo(fname) + ",\n"
-	ret += LogReader.getTotalRam(fname) + ",\n"
-	ret += LogReader.getCtlr(fname) + ",\n"
-	ret += LogReader.getHarddrives(fname);
-	
-	return ret;
+
 	
 def addServer(workbook, fname, index):
 
@@ -55,7 +49,7 @@ def addServer(workbook, fname, index):
 	worksheet.write(index,0, serial);
 	worksheet.write(index,1, LogReader.getAsset(serial));
 	worksheet.write(index,2, LogReader.getModel(fname));
-	worksheet.write(index,3, genInfo(fname));
+	worksheet.write(index,3, LogReader.genInfo(fname));
 	worksheet.write(index,5, LogReader.getFails(fname));
 
 
