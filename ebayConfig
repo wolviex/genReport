@@ -1,0 +1,35 @@
+{
+	"default":
+	{
+		"ReturnPolicy":
+		{
+			"ReturnsAcceptedOption": "ReturnsAccepted",
+			"RefundOption": "MoneyBack",
+			"ReturnsWithinOption": "Days_30",
+			"Description": "If you are not satisfied, return for refund.",
+			"ShippingCostPaidByOption": "Buyer"
+		},
+		"ShippingDetails":
+		{
+			"ShippingType": "Flat",
+			"ShippingServiceOptions":
+			{
+				"ShippingServicePriority": "1",
+				"ShippingService": "USPSMedia",
+				"ShippingServiceCost": "2.50"
+			}
+		},
+		"ListingType":"Chinese",
+		"StartPrice":"500"
+	},
+	"PowerEdge R610": #Enter model name. goes to default if nothing is found
+	{
+		"PicturePath":"./R610.jpg",
+		"ItemSpecifics":				#Item specifics that dont change for models go here
+		{
+			"Brand":"Dell",
+			"RAID Levels":"0, 1, 5, 6, RAID 10, RAID 50, RAID 60",
+			"Form Factor":"Rack-Mountable 2U"
+		}
+	}
+}

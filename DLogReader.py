@@ -5,6 +5,7 @@ import sys
 import re
 import xlrd
 from collections import OrderedDict
+from collections import Counter
 
 
 #Python version specific imports
@@ -58,10 +59,6 @@ def getManualInfo(model, infoField):
 			return getManualInfo(model,infoField)
 
 
-def enterHDInfo(model):
-	print("Could not find info for %s. Would you like to add?" % model)
-	line = sys.stdin.readline().rstrip().lower()
-   # if line == "y":
 
 
 #sql order
@@ -227,28 +224,48 @@ def getModel(fname):
 	return lString;
 	
 def getProcInfo(fname):
-	serverlog = open(fname, 'r');
-	
-	cpuDict = {}
-	ret = "";
+	serverlog = open(fname, 'r');	
 	lString = getRecentLog(serverlog.read());
+	serverlog.close();
 	try:
 		lString = re.search(r"Processor Information.*?System Information",lString,flags=re.MULTILINE | re.DOTALL).group(0);
 		lString = re.findall(r"\nVersion.*?: (.*?)\n",lString);
-		for x in lString:
-			if x == "N/A":
-				continue
-			try:
-				cpuDict[x] += 1
-			except KeyError:
-				cpuDict[x] = 1;
-			
-		for cpu, value in cpuDict.items():
-			ret += str(cpu)+" x"+str(value);
+		lString = [" ".join(x.split()) for x in lString]
+		count = dict(Counter(lString))
+		if count.has_key("N/A"):
+			count.remove("N/A")
+		return count;
 	except AttributeError:
-		ret = "CPU Info not found";
-	serverlog.close();
-	return " ".join(ret.split());
+		return None
+
+
+
+def getProcCores(fname):
+	serverlog = open(fname, 'r');
+	lString = serverlog.read()
+	ret = ""
+	try:
+		lString = re.search(r"Processor Information.*?System Information",lString,flags=re.MULTILINE | re.DOTALL).group(0);
+		lString = re.search(r"\CPU Cores Per Socket.*?: (.*?)\n",lString);
+		ret = lString.group(1)
+	except AttributeError:
+		ret = "";
+	serverlog.close()
+	return ret
+
+def getProcSpeed(fname):
+	serverlog = open(fname, 'r');
+	lString = serverlog.read()
+	ret = ""
+	try:
+		lString = re.search(r"Processor Information.*?System Information",lString,flags=re.MULTILINE | re.DOTALL).group(0);
+		lString = re.search(r"\Current Processor Speed.*?: (\d*)",lString);
+		speed = float(lString.group(1)) / 1000.0
+		ret = "{0:.2f}GHz".format(speed)
+	except AttributeError:
+		ret = "";
+	serverlog.close()
+	return ret
 
 def getHDInterface(fname):
 	serverlog = open(fname, 'r');
@@ -356,9 +373,9 @@ def getNumHarddrives(HDarray):
 
 	for HD in HDarray:
 		if HDdict.has_key(HD[1]):
-			HDdict[HD[1]] += HD[4]
+			HDdict[HD[1]] += int(HD[4])
 		else:
-			HDdict[HD[1]] = HD[4]
+			HDdict[HD[1]] = int(HD[4])
 	return " ".join(["{} x{}".format(k,v) for k,v in HDdict.items()])
 
 def getFullHDString(HDarray):
@@ -370,12 +387,16 @@ def getFullHDString(HDarray):
 	for HD in HDarray:
 		HDset.append("{} ({}, {}, {}) x{}".format(*HD))
 
-	return "\n".join(HDset)
+	return ",\n".join(HDset)
 
 def genInfo(fname):
 
 	ramInfo = getTotalRam(fname)
-	ret = getProcInfo(fname) + ",\n"
+	procInfo = getProcInfo(fname)
+	if procInfo is not None:
+		ret =  ",\n".join(["{} x{}".format(k,v) for k,v in procInfo.items()])  + ",\n"
+	else:
+		ret = "CPU not found\n"
 	if ramInfo is not None:
 		ret += "{} {} {} ({}),\n".format(*ramInfo)
 	else:
@@ -385,6 +406,12 @@ def genInfo(fname):
 	ret += getFullHDString(getHarddrives(fname))
 	
 	return ret;
+
+def getConfigValue(name):
+	if Config.has_key(name):
+		return Config[name]
+	else:
+		return None
 
 def loadGlobalVars():
 	realpath = os.path.dirname(os.path.realpath(sys.argv[0]))
