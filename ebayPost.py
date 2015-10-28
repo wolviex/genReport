@@ -184,7 +184,6 @@ for argc in sys.argv:
 			logFile = argc[0:argc.find(".txt")] + ".txt"
 		else:
 			logFile = argc + ".txt"
-		assets.add(str(logFile))
 		logPath = LogReader.getLogPath(str(logFile))
 		if logPath is not None:
 			postItem(logPath)
