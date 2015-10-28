@@ -209,7 +209,7 @@ def getCtlr(fname):
 	try:
 		lString = re.search(r"Ctlr\n-*?\n(.*?),",lString,re.MULTILINE | re.DOTALL).group(1);
 	except AttributeError:
-		lString = "Raid Controller not found"
+		lString = "No raid controller"
 	serverlog.close();
 	return lString;
 	

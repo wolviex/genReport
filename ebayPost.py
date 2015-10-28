@@ -9,6 +9,8 @@ from ebaysdk.connection import ConnectionError
 
 api = Connection(domain='api.sandbox.ebay.com',config_file="ebay.yaml",appid='JesseWat-67ba-4524-861d-4852beacadc1')
 
+failFlag = False
+
 def dump(api, full=False):
 
     print("\n")
@@ -36,8 +38,10 @@ def dump(api, full=False):
 def uploadPicture(fname):
 	try:
 		model = LogReader.getModel(fname)
-		print(getConfig(model,"PicturePath"))
-		files = {'file': ('EbayImage', open(getConfig(model,"PicturePath"), 'rb'))}
+		picturePath = getConfig(model,"PicturePath")
+		if picturePath is None:
+			return None
+		files = {'file': ('EbayImage', file(getConfig(model,"PicturePath"), 'rb'))}
 		pictureData = {
 				"WarningLevel": "High",
 				"PictureName": model
@@ -50,8 +54,7 @@ def uploadPicture(fname):
 
 def getConfig(model,varName):
 	try:
-		configFile = open(LogReader.getConfigValue("EbayConfig"),"r")
-		print(configFile)
+		configFile = file(LogReader.getConfigValue("EbayConfig"),"r")
 		cValues = jwjson.loadJSON(configFile.read())
 		configFile.close()
 		if cValues.has_key(model):
@@ -79,11 +82,22 @@ def genInfo(fname):
 
 def genTitle(fname):
 	ramInfo = LogReader.getTotalRam(fname)
+	procInfo = LogReader.getProcInfo(fname)
+	HDinfo = LogReader.getHarddrives(fname)
+	global failFlag
+	if procInfo is None:
+		failFlag = True
+		return "-1"
+
+	procTitle = ", "+" ".join(["{} x{}".format(k,v) for k,v in procInfo.items()])
+	procTitle = procTitle.replace("Intel(R)","")
+
 
 	title = LogReader.getModel(fname)
-	title += ", "+" ".join(["{} x{}".format(k,v) for k,v in LogReader.getProcInfo(fname).items()])
+	title += procTitle
 	title += ", {} {}".format(ramInfo[0],ramInfo[1])
-	title += ", "+LogReader.getNumHarddrives(LogReader.getHarddrives(fname))
+	if HDinfo is not None:
+		title += ", "+LogReader.getNumHarddrives(HDinfo)
 
 	return title
 
@@ -124,13 +138,16 @@ def genItemSpecifics(fname):
 	specDict["NameValueList"] = specList
 	return specDict
 
-def postItem(fname):        
+def postItem(fname):  
 	try:
 		dict = uploadPicture(fname)
 		model = LogReader.getModel(fname)
-		template = open("template.html","r")
+		template = file("template.html","r")
 		htmlData = template.read().replace("{{ title }}", genTitle(fname))
-		htmlData = htmlData.replace("{{ image src }}","<img src='"+dict['SiteHostedPictureDetails']['FullURL']+"'>")
+		if dict is not None:
+			htmlData = htmlData.replace("{{ image src }}","<img src='"+dict['SiteHostedPictureDetails']['FullURL']+"'>")
+		else:
+			htmlData = htmlData.replace("{{ image src }}","")
 		#htmlData = htmlData.replace("{{ image src }}","<img src='http://i.ebayimg.sandbox.ebay.com/00/s/OTAwWDE2MDA=/z/6FkAAOSwErpWHpfG/$_1.JPG?set_id=8800005007'>")
 		
 		htmlData = htmlData.replace("{{ description }}",genInfo(fname))   
@@ -153,14 +170,19 @@ def postItem(fname):
 					"ListingType": getConfig(model,"ListingType"),
 					"Quantity": "1",
 					"ItemSpecifics": genItemSpecifics(fname),
-					"PictureDetails": {"PictureURL": dict['SiteHostedPictureDetails']['FullURL']},
 					"ReturnPolicy":getConfig(model, "ReturnPolicy"),
 					"ShippingDetails":getConfig(model, "ShippingDetails"),
 					"Site": "Canada"
 				 }
 			}
+		global failFlag
+		if failFlag:
+			print("Something went wrong, skipping {}".format(fname))
+			failFlag = False
+			return
 
-		endItem = {"EndingReason":"Incorrect","ItemID":"110170362991"}
+		if dict is not None:
+			myitem["Item"]["PictureDetails"] = {"PictureURL": dict['SiteHostedPictureDetails']['FullURL']}
 		
 
 		d = api.execute('AddItem', myitem)
@@ -186,6 +208,11 @@ for argc in sys.argv:
 			logFile = argc + ".txt"
 		logPath = LogReader.getLogPath(str(logFile))
 		if logPath is not None:
+
+			if LogReader.getProcInfo(logPath) is None or LogReader.getTotalRam(logPath) is None:
+				print("Something went wrong with {}. Skipping".format(logPath))
+				continue
+
 			postItem(logPath)
 		else:
 			print("Could not find file {}".format(str(logFile)))
