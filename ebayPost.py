@@ -1,6 +1,7 @@
 import ebaysdk
 import datetime
 import jwjson
+import sys
 import DLogReader as LogReader
 from ebaysdk.utils import getNodeText
 from ebaysdk.trading import Connection
@@ -175,8 +176,8 @@ for argc in sys.argv:
 	if argc == sys.argv[0]: #Quick hack to stop it from getting the script name
 		continue
 
-	if argc == "-?":
-		print("Usage: TODO "+argc)
+	if argc == "-endall":
+		endAllItems()
 		
 	else:
 		if argc.find(".txt") > 0:
