@@ -5,6 +5,8 @@ import sys
 import array;
 import time;
 import os;
+import signal
+import curses
 from ftplib import FTP
 
 import traceback;
@@ -55,7 +57,15 @@ def addServer(workbook, fname, index):
 
 
 def makeSQLGui():
-	scrn = SQLGui(LogReader.Config["DBPath"])
+	
+	try:
+		scrn = SQLGui(LogReader.Config["DBPath"])
+		
+	except KeyboardInterrupt:
+		curses.endwin()
+		sys.exit(0)
+
+	
 	
 assets = set();
 

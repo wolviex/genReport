@@ -38,10 +38,7 @@ class SQLGui:
 		self.SQLData = self.SQLGetData()
 		self.createTable()
 		self.createInfoField()
-		try:
-			self.ListenForKey()
-		except KeyboardInterrupt:
-			sys.exit()
+		self.ListenForKey()
 
 	def ListenForKey(self):
 		

@@ -89,37 +89,61 @@ def getHDInfo(model,fname):
 
 	if addHDtoDB:
 		try:
+			infoFields = getInfoFields()
 			conn = httplib.HTTPConnection('www.newegg.com');
 			conn.request("GET", "/Product/ProductList.aspx?Submit=ENE&DEPA=0&Order=BESTMATCH&Description="+model+"&N=-1&isNodeId=1");
 			res = str(conn.getresponse().read()); 
 			link = ""
 			links = re.findall(r'<a.*?title="(.*?{0}.*?)".*?href="(.*?{0}.*?)"'.format(model), res,re.IGNORECASE)
-			if len(links) > 1:
-				print("Found more than 1 of the same HDD, looking for Enterprise edition...")
-				enterprise = False
-				for x,y in links:
-					if x.lower().find("enterprise") >= 0:
-						print("Found Enterprise edition")
-						enterprise = True
-						link = y
-						break
-				if not enterprise:
-					print("Enterprise edition not found. Using first link")
+			if len(links) > 0:
+				
+				if len(links) > 1:
+					print("Found more than 1 of the same HDD, looking for Enterprise edition...")
+					enterprise = False
+					for x,y in links:
+						if x.lower().find("enterprise") >= 0:
+							print("Found Enterprise edition")
+							enterprise = True
+							link = y
+							break
+					if not enterprise:
+						print("Enterprise edition not found. Using first link")
+						link = links[0][1]
+				else:
+					print(links)
 					link = links[0][1]
+
+
+				re.search(model,link).group(0);
+				conn.request("GET",link);
+				res2 = str(conn.getresponse().read()); 			
+				
+				infoDict = OrderedDict((x, getREGEX(model,r">%s<.*?<dd>(.*?)</dd>" % x,res2,1)) for x in infoFields)
+				c.execute("INSERT INTO harddrives VALUES ('{0}', '{1}', '{7}', '{2}','{3}', '{4}', '{5}', '{6}')".format(*(tuple(x for (k,x) in infoDict.items())+(model,))))
+				db.commit();
+				db.close();
+				return infoDict['Capacity'], infoDict['RPM'], infoDict['Form Factor']
 			else:
-				link = links[0][1]
+				print("Info for {} not found. Would you like to add? (y/n)".format(model))
+				while True:
+					line = sys.stdin.readline().rstrip()
+					if line.lower() == "y":
+						infoDict = OrderedDict((x,getManualInfo(model,x)) for x in infoFields)
+						c.execute("INSERT INTO harddrives VALUES ('{0}', '{1}', '{7}', '{2}','{3}', '{4}', '{5}', '{6}')".format(*(tuple(x for (k,x) in infoDict.items())+(model,))))
+						db.commit();
+						db.close();
+						return infoDict['Capacity'], infoDict['RPM'], infoDict['Form Factor']
+					elif line.lower() == "n":
+						return "No HDD Info"
+					else:
+						print("Invalid selection")
+
+
 
 
 
 			#Make sure the model is in the link
-			re.search(model,link).group(0);
-			conn.request("GET",link);
-			res2 = str(conn.getresponse().read()); 			
-			infoFields = getInfoFields()
-			infoDict = OrderedDict((x, getREGEX(model,r">%s<.*?<dd>(.*?)</dd>" % x,res2,1)) for x in infoFields)
-			c.execute("INSERT INTO harddrives VALUES ('{0}', '{1}', '{7}', '{2}','{3}', '{4}', '{5}', '{6}')".format(*(tuple(x for (k,x) in infoDict.items())+(model,))))
-			db.commit();
-			db.close();
+
 			return infoDict['Capacity'], infoDict['RPM'], infoDict['Form Factor']
 		except AttributeError:
 			print(traceback.print_exc());
@@ -233,9 +257,11 @@ def getProcInfo(fname):
 		lString = [" ".join(x.split()) for x in lString]
 		count = dict(Counter(lString))
 		if count.has_key("N/A"):
-			count.remove("N/A")
+			count.pop("N/A")
 		return count;
-	except AttributeError:
+	except AttributeError as e:
+		print(e)
+		
 		return None
 
 
