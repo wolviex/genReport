@@ -9,7 +9,7 @@ from ebaysdk.trading import Connection
 from ebaysdk.connection import ConnectionError
 
 dn = os.path.dirname(os.path.realpath(__file__))
-api = Connection(domain='api.sandbox.ebay.com',config_file=os.path.join(dn,"ebay.yaml"),appid='JesseWat-67ba-4524-861d-4852beacadc1')
+api = Connection(domain='api.sandbox.ebay.com',config_file=os.path.join(dn,"ebay.yaml"),appid='RefurbNe-e7ae-4872-bce0-668642f631ba')
 
 failFlag = False
 
