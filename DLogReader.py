@@ -4,6 +4,7 @@ import os
 import sys
 import re
 import xlrd
+import traceback
 from collections import OrderedDict
 from collections import Counter
 
@@ -37,14 +38,23 @@ def getRecentLog(logStr):
 	
 	return recent
 	
-def getREGEX(model,regex, string, g):
+def getREGEX(model,regex, string, g,replacementFields={}):
+
+	infoField = re.search(r">(.*?)<", regex).group(1)
+	if replacementFields.has_key(infoField):
+		regex = re.sub(">.*?<",">{}<".format(replacementFields[infoField]),regex,1)
+
+	
 	search = re.search(regex,string)
+
+
+
 	if search is not None:
 		return search.group(g)
-	else:
-		infoField = re.search(r">(.*?)<", regex).group(1)
 
-		return getManualInfo(model,infoField)
+
+
+	return getManualInfo(model,infoField)
 		
 def getManualInfo(model, infoField):
 	print("%s: Could not find info for %s. Would you like to add? (y/n)" % (model,infoField) )
@@ -54,16 +64,76 @@ def getManualInfo(model, infoField):
 			print("Enter info for "+infoField)
 			line = sys.stdin.readline().rstrip()
 			return line
+		elif line == "n":
+			return "None"
 	except Exception:
 			print("Invalid input")
 			return getManualInfo(model,infoField)
 
+def getHDInfoFromSite(site, model):
+	
+	def f(x,y):
+		return x
+	postProcess = f
+	infoFields = getInfoFields()
+	replacementFields = {}
+	
+	if site.lower() == "www.newegg.com":
+		requestURL = "/Product/ProductList.aspx?Submit=ENE&DEPA=0&Order=BESTMATCH&Description={}&N=-1&isNodeId=1".format(model)
+		linkRegEx = '<a.*?title="(.*?{0}.*?)".*?href="(.*?{0}.*?)"'.format(model)
+		infoRegEx = ">{}<.*?<dd>(.*?)</dd>"
+		linkIndex = 1
+	elif site.lower() == "www.harddrivesdirect.com":
+		requestURL = "http://www.harddrivesdirect.com/advanced_search_result.php?keywords={}".format(model)
+		linkRegEx = r'>{}<[\S\s]*?href=".*?\.com(.*?)"[\S\s]*?<b>(.*?)</b>'.format(model)             #.{{0,100}}<a href="(.*?)".{{0,100}}<b>(.*?)</b>'.format(model)
+		infoRegEx = r">{}<[\S\s]*?<td[\S\s]*?>([\S\s]*?)<"
+		replacementFields["Brand"] = "Manufacturer"
+		replacementFields["Series"] = "Category"
+		replacementFields["RPM"] = "Spindle Speed"
+		replacementFields["Interface"] = "Generation"
+		linkIndex = 0
+		def f(x,y):
+			if y == "Form Factor":
+				s = re.search("\d.\d",x)
+				if s is not None:
+					x = '{}"'.format(s.group(0))
+			return x
 
+		postProcess = f
+			
+	
+	conn = httplib.HTTPConnection(site);
+	conn.request("GET", requestURL);
+	res = str(conn.getresponse().read()); 
+	link = ""
+	links = re.findall(linkRegEx, res,re.IGNORECASE)
+	if len(links) > 1:
+		print("Found more than 1 of the same HDD, looking for Enterprise edition...")
+		enterprise = False
+		for y,x in links:
+			if x.lower().find("enterprise") >= 0:
+				print("Found Enterprise edition")
+				enterprise = True
+				link = y
+				break
+		if not enterprise:
+			print("Enterprise edition not found. Using first link")
+			link = links[0][linkIndex]
+	elif len(links) == 1:
+		link = links[0][linkIndex]
+	elif len(links) == 0:
+		return None
+
+	
+	conn.request("GET",link);
+	res2 = str(conn.getresponse().read()); 			
+	infoDict = OrderedDict((x, postProcess(getREGEX(model,infoRegEx.format(x),res2,1,replacementFields),x)) for x in infoFields)
+	return infoDict
 
 
 #sql order
 # brand text, series text, model text, interface text, capacity text, speed text, cache text, formfactor text
-def getHDInfo(model,fname):
+def getHDInfo(model):
 
 
 	
@@ -89,36 +159,12 @@ def getHDInfo(model,fname):
 
 	if addHDtoDB:
 		try:
-			infoFields = getInfoFields()
-			conn = httplib.HTTPConnection('www.newegg.com');
-			conn.request("GET", "/Product/ProductList.aspx?Submit=ENE&DEPA=0&Order=BESTMATCH&Description="+model+"&N=-1&isNodeId=1");
-			res = str(conn.getresponse().read()); 
-			link = ""
-			links = re.findall(r'<a.*?title="(.*?{0}.*?)".*?href="(.*?{0}.*?)"'.format(model), res,re.IGNORECASE)
-			if len(links) > 0:
-				
-				if len(links) > 1:
-					print("Found more than 1 of the same HDD, looking for Enterprise edition...")
-					enterprise = False
-					for x,y in links:
-						if x.lower().find("enterprise") >= 0:
-							print("Found Enterprise edition")
-							enterprise = True
-							link = y
-							break
-					if not enterprise:
-						print("Enterprise edition not found. Using first link")
-						link = links[0][1]
-				else:
-					print(links)
-					link = links[0][1]
+			infoDict = getHDInfoFromSite("www.harddrivesdirect.com",model)
+			if infoDict is None:
+				print("Can't find Harddrive information from harddrivesdirect.com Trying newegg.com")
+				infoDict = getHDInfoFromSite("www.newegg.com",model)
 
-
-				re.search(model,link).group(0);
-				conn.request("GET",link);
-				res2 = str(conn.getresponse().read()); 			
-				
-				infoDict = OrderedDict((x, getREGEX(model,r">%s<.*?<dd>(.*?)</dd>" % x,res2,1)) for x in infoFields)
+			if infoDict is not None:
 				c.execute("INSERT INTO harddrives VALUES ('{0}', '{1}', '{7}', '{2}','{3}', '{4}', '{5}', '{6}')".format(*(tuple(x for (k,x) in infoDict.items())+(model,))))
 				db.commit();
 				db.close();
@@ -145,14 +191,15 @@ def getHDInfo(model,fname):
 			#Make sure the model is in the link
 
 			return infoDict['Capacity'], infoDict['RPM'], infoDict['Form Factor']
-		except AttributeError:
-			print(traceback.print_exc());
+		except AttributeError as e:
+			traceback.print_exc()
+			sys.exit(0)
 			return "No HDD Info found";
 	db.close();
 			
 def getRealHDBrand(model,brand):
 	try:
-		db = sqlite3.connect("hdDatabase.db");
+		db = sqlite3.connect(Config["DBPath"]);
 		c = db.cursor();
 		c.execute("SELECT * FROM harddrives WHERE model ='"+model+"'")
 		hdData = c.fetchone();
@@ -348,7 +395,8 @@ def getHarddrives(fname):
 		hdStringArray = set();
 		
 		for k,v in HDDS.items():
-			hdStringArray.add((getRealHDBrand(str(k[1]),str(k[0])),)+getHDInfo(str(k[1]),fname)+(str(v),))
+			HDInfo = getHDInfo(str(k[1]))
+			hdStringArray.add((getRealHDBrand(str(k[1]),str(k[0])),)+HDInfo+(str(v),))
 		
 	except AttributeError:
 		return None
@@ -402,7 +450,7 @@ def getNumHarddrives(HDarray):
 			HDdict[HD[1]] += int(HD[4])
 		else:
 			HDdict[HD[1]] = int(HD[4])
-	return " ".join(["{} x{}".format(k,v) for k,v in HDdict.items()])
+	return " ".join(["{} HDD x{}".format(k,v) for k,v in HDdict.items()])
 
 def getFullHDString(HDarray):
 	HDset = []

@@ -2,12 +2,14 @@ import ebaysdk
 import datetime
 import jwjson
 import sys
+import os
 import DLogReader as LogReader
 from ebaysdk.utils import getNodeText
 from ebaysdk.trading import Connection
 from ebaysdk.connection import ConnectionError
 
-api = Connection(domain='api.sandbox.ebay.com',config_file="ebay.yaml",appid='JesseWat-67ba-4524-861d-4852beacadc1')
+dn = os.path.dirname(os.path.realpath(__file__))
+api = Connection(domain='api.sandbox.ebay.com',config_file=os.path.join(dn,"ebay.yaml"),appid='JesseWat-67ba-4524-861d-4852beacadc1')
 
 failFlag = False
 
@@ -142,7 +144,7 @@ def postItem(fname):
 	try:
 		dict = uploadPicture(fname)
 		model = LogReader.getModel(fname)
-		template = file("template.html","r")
+		template = file(os.path.join(dn,"template.html"),"r")
 		htmlData = template.read().replace("{{ title }}", genTitle(fname))
 		if dict is not None:
 			htmlData = htmlData.replace("{{ image src }}","<img src='"+dict['SiteHostedPictureDetails']['FullURL']+"'>")
@@ -194,11 +196,17 @@ def postItem(fname):
 
 #endAllItems()
 
+AbsolutePath = False
+	
+
 for argc in sys.argv:
 	if argc == sys.argv[0]: #Quick hack to stop it from getting the script name
 		continue
 
-	if argc == "-endall":
+	if argc == "-abs":
+		AbsolutePath = True
+
+	elif argc == "-endall":
 		endAllItems()
 		
 	else:
@@ -206,7 +214,10 @@ for argc in sys.argv:
 			logFile = argc[0:argc.find(".txt")] + ".txt"
 		else:
 			logFile = argc + ".txt"
-		logPath = LogReader.getLogPath(str(logFile))
+		if not AbsolutePath:
+			logPath = LogReader.getLogPath(str(logFile))
+		else:
+			logPath = argc
 		if logPath is not None:
 
 			if LogReader.getProcInfo(logPath) is None or LogReader.getTotalRam(logPath) is None:
