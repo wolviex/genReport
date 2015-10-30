@@ -13,10 +13,10 @@ api.sandbox.ebay.com:
 # # Trading API - https://www.x.com/developers/ebay/products/trading-api
 # api.ebay.com:
     # version: 719
-    # appid: ENTER_YOUR_APPID_HERE
-    # certid: ENTER_YOUR_CERTID_HERE
-    # devid: ENTER_YOUR_DEVID_HERE
-    # token: ENTER_YOUR_TOKEN_HERE
+    # appid: RefurbNe-e7ae-4872-bce0-668642f631ba
+    # certid: 84afbb5e-add1-4b8c-8857-c9937ad45057
+    # devid: d6237b80-25d3-42b4-9131-0cd3aa4730f4
+    # token: AgAAAA**AQAAAA**aAAAAA**Ib0zVg**nY+sHZ2PrBmdj6wVnY+sEZ2PrA2dj6AEkYugCpaHpAidj6x9nY+seQ**2Q0DAA**AAMAAA**+5Hxe/eLut3k/dJznY6n1cUcafn9Manuobgq3xSjYFaFeSEzEu4wAuwMiO+ipyHWLfRCrJkZXEJiy6NeVFxikcRoDHXh5YjbjWr1rmhHpJyFu1H7XIRgUZ7+XpzSEamZfmWe6DqgIqjzb6NiVEuINl2Xo3Xdm0Sudy3p7so5Asl91keOzdskErWSjQpXjK9LOiS/9CJRpEHCUCsS8+XfhEDFHooDyMNp+0b8REWFGeIR2Zkiskb+zuNCmllB61R8X4LFWQkAAVskZTAoo9Uqy7zABgmVN/oTh6hQW1fU9qQZjWYThvcvMEnDeYDKWcRGMFLLX3QITx6Ealn0lI9vPKN+R+5hOPb9wws+jk/I4lYYZGICy8pefHu10KcnJbfGw806Uh8CUPndM6Y5O8+BF56eR17cLoS8dkOekaYaqZpsgT1vBteKg4+0GQjtERKFd1pa7UQZauROyZe0pDh94yqk2Kj2ewGBzWQBgw3cMdvH85YQ27eEr3CTMNXiJV1wx4gb3jSz5jBgAdeYlX8RGKi0Hoifw9rTqadaabk1fDFZN2UC4gDHy3I0DnOWvPgrHrHRf0c73+OvFAZlEqP+kdHikOYdgPomFPJgw58zGa7GE2rlfICMUfEFZvCByhEuY7lXaNoh7Cegy/ioiyz9Zm3mFcRBXRYzA45Jdznlo3MA1zVfGGiF/65QPvkTWfgw0WHSMWxiN1Vt1ALHjR1TQZ9cXneDYlyI7N3Lu26aRrSjxafKqEzCzd6GDTvocy71
 
 # # Finding API - https://www.x.com/developers/ebay/products/finding-api
 # svcs.ebay.com:
