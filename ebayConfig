@@ -44,6 +44,14 @@
 				"ShippingServiceCost": "100.00"
 			}
 		}
+		"SellerProfiles":
+		{
+			"SellerShippingProfile":
+			{
+				"ShippingProfileID": "123456",
+				"ShippingProfileName": "Name goes here"
+			}
+		}
 		
 	},
 	"PowerEdge R610": #Enter model name. goes to default if nothing is found
