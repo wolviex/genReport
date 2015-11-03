@@ -25,7 +25,7 @@
 		"ListingType":"Chinese",
 		"StartPrice":"500",
 		"PrimaryCategory": {"CategoryID": "11211"},
-		"Site": "USA",
+		"Site": "US",
 		"ReturnPolicy":
 		{
 			"ReturnsAcceptedOption": "ReturnsAccepted",

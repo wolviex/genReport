@@ -139,7 +139,7 @@ def getHDInfo(model):
 	
 	
 	addHDtoDB = False;
-	db = sqlite3.connect(Config["DBPath"]);
+	db = sqlite3.connect(getConfigValue("DBPath"));
 	
 	if hasDBTable(db) == False:
 		print("Harddrive table not found. Creating.")
@@ -483,6 +483,16 @@ def genInfo(fname):
 
 def getConfigValue(name):
 	if Config.has_key(name):
+
+		#Quick hack to make sure local files are pointed to the script directory and not working directory
+		if len(Config[name]) >= 2:
+			directory = Config[name][:2]
+			if directory == "./":
+				realpath = os.path.dirname(os.path.realpath(sys.argv[0]))
+				Config[name] = realpath + Config[name][1:]
+				print(Config[name])
+
+
 		return Config[name]
 	else:
 		return None

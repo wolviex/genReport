@@ -101,12 +101,24 @@ def getConfig(model,varName=None):
 			if varName is None:
 				return cValues[model]
 			if cValues[model].has_key(varName):
+				if type(cValues[model][varName]) is str or type(cValues[model][varName]) is unicode:
+					
+					if cValues[model][varName][:2] == "./":
+						realpath = os.path.dirname(os.path.realpath(sys.argv[0]))
+						return realpath + cValues[model][varName][1:]
+
 				return cValues[model][varName]
 
 		if cValues.has_key("default"):
 			if varName is None:
 				return cValues["default"]
 			if cValues["default"].has_key(varName):
+				if type(cValues["default"][varName]) is str or type(cValues["default"][varName]) is unicode:
+					
+					if cValues["default"][varName][:2] == "./":
+						realpath = os.path.dirname(os.path.realpath(sys.argv[0]))
+						return realpath + cValues["default"][varName][1:]
+
 				return cValues["default"][varName]
 
 		print("Warning: Could not find any config for {}".format(varName))
@@ -215,6 +227,8 @@ def postItem(fname):
 		postInfo = genInfo(fname)
 		template = file(os.path.join(dn,"template.html"),"r")
 		htmlData = template.read().replace("{{ title }}", postTitle)
+		htmlData += "<!---SERVICETAG={}-----!>".format(LogReader.getSerial(fname))
+
 		if pictureURLs is not None:
 			pictureHTML = ""
 			for url in pictureURLs:
