@@ -66,6 +66,7 @@
 	{
 		"PostalCode": "N1E5L2",
 		"StartPrice":"150",
+		"SpecialNotes":"Rail kit not included.",
 		"ItemSpecifics":
 		{
 			"Brand":"Dell",

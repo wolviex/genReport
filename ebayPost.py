@@ -130,9 +130,12 @@ def getConfig(model,varName=None):
 		return None
 
 def genInfo(fname):
-    info = LogReader.genInfo(fname).replace(",\n","<br>");
-    info += "<br>"
-    return info
+	notes = getConfig(LogReader.getModel(fname),"SpecialNotes")
+	info = LogReader.genInfo(fname).replace(",\n","<br>");
+	info += "<br>"
+	if notes is not None:
+		info += "<br>{}".format(notes)
+	return info
 
 
 
@@ -140,6 +143,7 @@ def genTitle(fname):
 	ramInfo = LogReader.getTotalRam(fname)
 	procInfo = LogReader.getProcInfo(fname)
 	HDinfo = LogReader.getHarddrives(fname)
+	
 	global failFlag
 	if procInfo is None:
 		failFlag = True
@@ -154,7 +158,6 @@ def genTitle(fname):
 	title += ", {} {}".format(ramInfo[0],ramInfo[1])
 	if HDinfo is not None:
 		title += ", "+LogReader.getNumHarddrives(HDinfo)
-
 	return title
 
 def endAllItems():
@@ -225,6 +228,8 @@ def postItem(fname):
 		model = LogReader.getModel(fname)
 		postTitle = genTitle(fname)
 		postInfo = genInfo(fname)
+
+
 		template = file(os.path.join(dn,"template.html"),"r")
 		htmlData = template.read().replace("{{ title }}", postTitle)
 		htmlData += "<!---SERVICETAG={}-----!>".format(LogReader.getSerial(fname))
