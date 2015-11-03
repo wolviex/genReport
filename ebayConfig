@@ -32,7 +32,7 @@
 			"ReturnsAcceptedOption": "ReturnsAccepted",
 			"RefundOption": "MoneyBack",
 			"ReturnsWithinOption": "Days_30",
-			"Description": "If you are not satisfied, return for refund.",
+			"Description": "If a unit is confirmed DOA, we will refund your shipping costs",
 			"ShippingCostPaidByOption": "Buyer"
 		},
 		"ShippingDetails":
