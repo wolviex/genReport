@@ -1,6 +1,32 @@
 {
 	"default":
 	{
+		#Script related config
+
+		"APICommandList":"./ebayAPICommands",
+		"Domain":"api.sandbox.ebay.com",
+		"PictureInfo":
+		{
+		"Path":"./pics",
+		"FileTypes":".jpg,.jpeg,.png,.gif,.bmp"
+		},
+
+		#Actual ebay API commands. 
+
+		"Country":"CA",
+		"ConditionID": "3000",
+		"Currency": "USD",
+		"DispatchTimeMax": "3",
+		"ListingDuration": "Days_7",
+		"ListingType": "English",
+		"PaymentMethods": "PayPal",
+		"PayPalEmailAddress": "jwatson.dev@gmail.com",
+		"PostalCode": "V9L6W3",
+		"Quantity": "1",
+		"ListingType":"Chinese",
+		"StartPrice":"500",
+		"PrimaryCategory": {"CategoryID": "11211"},
+		"Site": "Canada",
 		"ReturnPolicy":
 		{
 			"ReturnsAcceptedOption": "ReturnsAccepted",
@@ -18,13 +44,11 @@
 				"ShippingService": "USPSMedia",
 				"ShippingServiceCost": "2.50"
 			}
-		},
-		"ListingType":"Chinese",
-		"StartPrice":"500"
+		}
+		
 	},
 	"PowerEdge R610": #Enter model name. goes to default if nothing is found
 	{
-		"PicturePath":"./R610.jpg",
 		"ItemSpecifics":				#Item specifics that dont change for models go here
 		{
 			"Brand":"Dell",

@@ -3,13 +3,22 @@ import datetime
 import jwjson
 import sys
 import os
+import ast
 import DLogReader as LogReader
 from ebaysdk.utils import getNodeText
 from ebaysdk.trading import Connection
 from ebaysdk.connection import ConnectionError
 
-dn = os.path.dirname(os.path.realpath(__file__))
-api = Connection(domain='api.sandbox.ebay.com',config_file=os.path.join(dn,"ebay.yaml"),appid='RefurbNe-e7ae-4872-bce0-668642f631ba')
+
+
+def init():
+	global APIcmds
+	APIcmds = getAPICommandList()
+
+
+
+
+
 
 failFlag = False
 
@@ -37,41 +46,73 @@ def dump(api, full=False):
         replystr = "%s" % api.response.reply
         print("Response Reply: %s" % replystr[:150])
 
+def getPictures(name):
+	pictureCfg = getConfig("default","PictureInfo")
+	fileTypes = pictureCfg["FileTypes"].split(",")
+	pictureList = []
+	picPath = "{}/{}".format(pictureCfg["Path"],name)
+	if os.path.isdir(picPath):
+		files = os.listdir(picPath)
+		for file in files:
+			fname,ext = os.path.splitext(file)
+			if ext.lower() in fileTypes:
+				pictureList.append("{}/{}".format(picPath,file))
+	return pictureList
+
 def uploadPicture(fname):
 	try:
 		model = LogReader.getModel(fname)
-		picturePath = getConfig(model,"PicturePath")
-		if picturePath is None:
+		pictureList = getPictures(LogReader.getSerial(fname))
+		if pictureList is None:
+			pictureList = getPictures(model)
+
+		pictureURLs = []
+		if len(pictureList) <= 0:
 			return None
-		files = {'file': ('EbayImage', file(getConfig(model,"PicturePath"), 'rb'))}
-		pictureData = {
-				"WarningLevel": "High",
-				"PictureName": model
-			}
-		response = api.execute('UploadSiteHostedPictures', pictureData, files=files)
-		return response.dict()
+		for picture in pictureList:
+			files = {'file': ('EbayImage', file(picture, 'rb'))}
+			pictureData = {
+					"WarningLevel": "High",
+					"PictureName": model
+				}
+			response = api.execute('UploadSiteHostedPictures', pictureData, files=files)
+			pictureURLs.append(response.dict()['SiteHostedPictureDetails']['FullURL'])
+		return pictureURLs
 	except ConnectionError as e:
 		print(e)
 		print(e.response.dict())
 
-def getConfig(model,varName):
+
+def getAPICommandList():
+	commandListFile = file(getConfig("default","APICommandList"),"r")
+	commandList = ast.literal_eval(commandListFile.read())
+	commandListFile.close()
+	return commandList
+
+
+
+def getConfig(model,varName=None):
 	try:
 		configFile = file(LogReader.getConfigValue("EbayConfig"),"r")
 		cValues = jwjson.loadJSON(configFile.read())
 		configFile.close()
 		if cValues.has_key(model):
+			if varName is None:
+				return cValues[model]
 			if cValues[model].has_key(varName):
 				return cValues[model][varName]
 
 		if cValues.has_key("default"):
+			if varName is None:
+				return cValues["default"]
 			if cValues["default"].has_key(varName):
 				return cValues["default"][varName]
 
-		print("Error: Could not find any config for {}".format(varName))
+		print("Warning: Could not find any config for {}".format(varName))
 		return None
 
 	except Exception as e:
-		print("ERROR: Could not load config file!")
+		print("Warning: Could not load config file!")
 		print(e)
 		return None
 
@@ -140,14 +181,39 @@ def genItemSpecifics(fname):
 	specDict["NameValueList"] = specList
 	return specDict
 
+def setItemConfig(model, item):
+	#Get default config values first and then overwrite them with model specific values
+	
+	global APIcmds
+	def f(cfgValues,item):
+		for k,v in cfgValues.items():
+
+			if k is "ItemSpecifics": #Skip item specifics so it doesn't overwrite the generated ones
+				continue
+
+			cmd = "Item.{}".format(k)
+			if cmd in APIcmds:
+				item["Item"][k] = v
+		return item
+
+	defaultCfg = getConfig("default")
+	modelCfg  = getConfig(model)
+
+	if defaultCfg is not None:
+		item = f(defaultCfg,item)
+	if modelCfg is not None:
+		item = f(modelCfg,item)
+
+	return item
+
 def postItem(fname):  
 	try:
-		dict = uploadPicture(fname)
+		pictureURLs = uploadPicture(fname)
 		model = LogReader.getModel(fname)
 		template = file(os.path.join(dn,"template.html"),"r")
 		htmlData = template.read().replace("{{ title }}", genTitle(fname))
-		if dict is not None:
-			htmlData = htmlData.replace("{{ image src }}","<img src='"+dict['SiteHostedPictureDetails']['FullURL']+"'>")
+		if pictureURLs is not None:
+			htmlData = htmlData.replace("{{ image src }}","<img src='{}'>".format(pictureURLs[0]))
 		else:
 			htmlData = htmlData.replace("{{ image src }}","")
 		#htmlData = htmlData.replace("{{ image src }}","<img src='http://i.ebayimg.sandbox.ebay.com/00/s/OTAwWDE2MDA=/z/6FkAAOSwErpWHpfG/$_1.JPG?set_id=8800005007'>")
@@ -157,24 +223,7 @@ def postItem(fname):
 				"Item": {
 					"Title": genTitle(fname),
 					"Description": "<![CDATA["+htmlData+"]]>",
-					"PrimaryCategory": {"CategoryID": "11211"},
-					"StartPrice": getConfig(model,"StartPrice"),
-					"CategoryMappingAllowed": "true",
-					"Country": "CA",
-					"ConditionID": "3000",
-					"Currency": "USD",
-					"DispatchTimeMax": "3",
-					"ListingDuration": "Days_7",
-					"ListingType": "English",
-					"PaymentMethods": "PayPal",
-					"PayPalEmailAddress": "jwatson.dev@gmail.com",
-					"PostalCode": "V9L6W3",
-					"ListingType": getConfig(model,"ListingType"),
-					"Quantity": "1",
 					"ItemSpecifics": genItemSpecifics(fname),
-					"ReturnPolicy":getConfig(model, "ReturnPolicy"),
-					"ShippingDetails":getConfig(model, "ShippingDetails"),
-					"Site": "Canada"
 				 }
 			}
 		global failFlag
@@ -183,9 +232,11 @@ def postItem(fname):
 			failFlag = False
 			return
 
-		if dict is not None:
-			myitem["Item"]["PictureDetails"] = {"PictureURL": dict['SiteHostedPictureDetails']['FullURL']}
+		if pictureURLs is not None:
+			myitem["Item"]["PictureDetails"] = {"PictureURL": [x for x in pictureURLs]}
+
 		
+		myitem = setItemConfig(model,myitem)
 
 		d = api.execute('AddItem', myitem)
 		#print(d.dict()["User"]["UserID"])
@@ -197,7 +248,10 @@ def postItem(fname):
 #endAllItems()
 
 AbsolutePath = False
-	
+init()	
+
+dn = os.path.dirname(os.path.realpath(__file__))
+api = Connection(domain=getConfig("default","Domain"),config_file=os.path.join(dn,"ebay.yaml"))
 
 for argc in sys.argv:
 	if argc == sys.argv[0]: #Quick hack to stop it from getting the script name
