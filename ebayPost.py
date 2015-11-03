@@ -211,8 +211,10 @@ def postItem(fname):
 	try:
 		pictureURLs = uploadPicture(fname)
 		model = LogReader.getModel(fname)
+		postTitle = genTitle(fname)
+		postInfo = genInfo(fname)
 		template = file(os.path.join(dn,"template.html"),"r")
-		htmlData = template.read().replace("{{ title }}", genTitle(fname))
+		htmlData = template.read().replace("{{ title }}", postTitle)
 		if pictureURLs is not None:
 			pictureHTML = ""
 			for url in pictureURLs:
@@ -222,7 +224,7 @@ def postItem(fname):
 			htmlData = htmlData.replace("{{ image src }}","")
 		#htmlData = htmlData.replace("{{ image src }}","<img src='http://i.ebayimg.sandbox.ebay.com/00/s/OTAwWDE2MDA=/z/6FkAAOSwErpWHpfG/$_1.JPG?set_id=8800005007'>")
 		
-		htmlData = htmlData.replace("{{ description }}",genInfo(fname))   
+		htmlData = htmlData.replace("{{ description }}",postInfo)   
 		myitem = {
 				"Item": {
 					"Title": genTitle(fname),
@@ -241,6 +243,34 @@ def postItem(fname):
 
 		
 		myitem = setItemConfig(model,myitem)
+
+		if VerifyFlag:
+			try:
+				rows, columns = os.popen('stty size', 'r').read().split()
+				print("-" * int(columns))
+			except Exception as e:
+				print("------------------------------")
+			print("TITLE:{}".format(postTitle))
+			try:
+				rows, columns = os.popen('stty size', 'r').read().split()
+				print("-" * int(columns))
+			except Exception as e:
+				print("------------------------------")
+			print("DESCRIPTION:\n{}".format(postInfo.replace("<br>","\n")))
+			while True:
+				print("Is this ok? (y/n)")
+				line = sys.stdin.readline().rstrip()
+				if line.lower() == "y" or line.lower() == "yes":
+					break
+				elif  line.lower() == "n" or line.lower() == "no":
+					print("Skipping...")
+					return
+				else:
+					print("Invalid input")
+
+
+
+
 		d = api.execute('AddItem', myitem)
 		#print(d.dict()["User"]["UserID"])
 		
@@ -251,6 +281,7 @@ def postItem(fname):
 #endAllItems()
 
 AbsolutePath = False
+VerifyFlag = False
 init()	
 
 dn = os.path.dirname(os.path.realpath(__file__))
@@ -260,11 +291,15 @@ for argc in sys.argv:
 	if argc == sys.argv[0]: #Quick hack to stop it from getting the script name
 		continue
 
+
+
 	if argc == "-abs":
 		AbsolutePath = True
 
 	elif argc == "-endall":
 		endAllItems()
+	elif argc == "-v" or argc == "-verify":
+		VerifyFlag = True
 		
 	else:
 		if argc.find(".txt") > 0:
