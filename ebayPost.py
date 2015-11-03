@@ -63,7 +63,7 @@ def uploadPicture(fname):
 	try:
 		model = LogReader.getModel(fname)
 		pictureList = getPictures(LogReader.getSerial(fname))
-		if pictureList is None:
+		if len(pictureList) <= 0:
 			pictureList = getPictures(model)
 
 		pictureURLs = []
@@ -84,6 +84,7 @@ def uploadPicture(fname):
 
 
 def getAPICommandList():
+	print getConfig("default","APICommandList")
 	commandListFile = file(getConfig("default","APICommandList"),"r")
 	commandList = ast.literal_eval(commandListFile.read())
 	commandListFile.close()
@@ -188,7 +189,7 @@ def setItemConfig(model, item):
 	def f(cfgValues,item):
 		for k,v in cfgValues.items():
 
-			if k is "ItemSpecifics": #Skip item specifics so it doesn't overwrite the generated ones
+			if k == "ItemSpecifics": #Skip item specifics so it doesn't overwrite the generated ones
 				continue
 
 			cmd = "Item.{}".format(k)
@@ -213,7 +214,10 @@ def postItem(fname):
 		template = file(os.path.join(dn,"template.html"),"r")
 		htmlData = template.read().replace("{{ title }}", genTitle(fname))
 		if pictureURLs is not None:
-			htmlData = htmlData.replace("{{ image src }}","<img src='{}'>".format(pictureURLs[0]))
+			pictureHTML = ""
+			for url in pictureURLs:
+				pictureHTML += '<li><img src="{}"></li>'.format(url)
+			htmlData = htmlData.replace("{{ image src }}",'<img src="{}">'.format(pictureURLs[0]))
 		else:
 			htmlData = htmlData.replace("{{ image src }}","")
 		#htmlData = htmlData.replace("{{ image src }}","<img src='http://i.ebayimg.sandbox.ebay.com/00/s/OTAwWDE2MDA=/z/6FkAAOSwErpWHpfG/$_1.JPG?set_id=8800005007'>")
@@ -237,7 +241,6 @@ def postItem(fname):
 
 		
 		myitem = setItemConfig(model,myitem)
-
 		d = api.execute('AddItem', myitem)
 		#print(d.dict()["User"]["UserID"])
 		
