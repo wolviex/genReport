@@ -21,30 +21,31 @@ def init():
 
 
 failFlag = False
+LogURL = False
 
 def dump(api, full=False):
 
-    print("\n")
+	print("\n")
 
-    if api.warnings():
-        print("Warnings" + api.warnings())
+	if api.warnings():
+		print("Warnings" + api.warnings())
 
-    if api.response.content:
-        print("Call Success: %s in length" % len(api.response.content))
+	if api.response.content:
+		print("Call Success: %s in length" % len(api.response.content))
 
-    print("Response code: %s" % api.response_code())
-    print("Response DOM1: %s" % api.response_dom()) # deprecated
-    print("Response ETREE: %s" % api.response.dom())
+	print("Response code: %s" % api.response_code())
+	print("Response DOM1: %s" % api.response_dom()) # deprecated
+	print("Response ETREE: %s" % api.response.dom())
 
-    if full:
-        print(api.response.content)
-        print(api.response.json())
-        print("Response Reply: %s" % api.response.reply)
-    else:
-        dictstr = "%s" % api.response.dict()
-        print("Response dictionary: %s..." % dictstr[:150])
-        replystr = "%s" % api.response.reply
-        print("Response Reply: %s" % replystr[:150])
+	if full:
+		print(api.response.content)
+		print(api.response.json())
+		print("Response Reply: %s" % api.response.reply)
+	else:
+		dictstr = "%s" % api.response.dict()
+		print("Response dictionary: %s..." % dictstr[:150])
+		replystr = "%s" % api.response.reply
+		print("Response Reply: %s" % replystr[:150])
 
 def getPictures(name):
 	realpath = os.path.dirname(os.path.realpath(sys.argv[0]))
@@ -55,7 +56,6 @@ def getPictures(name):
 	if os.path.isdir(picPath):
 
 		files = os.listdir(picPath)
-		print("Nope")
 		for file in files:
 			fname,ext = os.path.splitext(file)
 			if ext.lower() in fileTypes:
@@ -76,7 +76,7 @@ def uploadPicture(fname):
 			pictureData = {
 					"WarningLevel": "High",
 					"PictureName": model,
-                    "PictureSet":"Supersize"
+					"PictureSet":"Supersize"
 				}
 			response = api.execute('UploadSiteHostedPictures', pictureData, files=files)
 			pictureURLs.append(response.dict()['SiteHostedPictureDetails']['FullURL'])
@@ -248,14 +248,32 @@ def printLine():
 	except Exception as e:
 		print("------------------------------")
 
+def verifyPost(postInfo,postTitle):
+	printLine()
+	print("TITLE:{}".format(postTitle))
+	printLine()
+	print("DESCRIPTION:\n{}".format(postInfo.replace("<br>","\n")))
+	while True:
+		print("Is this ok? (y/n)")
+		line = sys.stdin.readline().rstrip()
+		if line.lower() == "y" or line.lower() == "yes":
+			return
+		elif  line.lower() == "n" or line.lower() == "no":
+			print("Skipping...")
+			return -1
+		else:
+			print("Invalid input")
+
 def postItem(fname):  
 	try:
-		pictureURLs = uploadPicture(fname)
+		
 		model = LogReader.getModel(fname)
 		postTitle = genTitle(fname)
 		postInfo = genInfo(fname)
-
-
+		if VerifyFlag:
+			if verifyPost(postInfo,postTitle) is not None:
+				return
+		pictureURLs = uploadPicture(fname)
 		template = file(os.path.join(dn,"template.html"),"r")
 		htmlData = template.read().replace("{{ title }}", postTitle)
 		htmlData += "<!---SERVICETAG={}-----!>".format(LogReader.getSerial(fname))
@@ -289,21 +307,6 @@ def postItem(fname):
 		
 		myitem = setItemConfig(model,myitem)
 
-		if VerifyFlag:
-			printLine()
-			print("TITLE:{}".format(postTitle))
-			printLine()
-			print("DESCRIPTION:\n{}".format(postInfo.replace("<br>","\n")))
-			while True:
-				print("Is this ok? (y/n)")
-				line = sys.stdin.readline().rstrip()
-				if line.lower() == "y" or line.lower() == "yes":
-					break
-				elif  line.lower() == "n" or line.lower() == "no":
-					print("Skipping...")
-					return
-				else:
-					print("Invalid input")
 
 
 
@@ -311,7 +314,10 @@ def postItem(fname):
 		d = api.execute('AddItem', myitem).dict()
 		
 		itemURL = getItemURL(d["ItemID"])
-
+		if LogURL:
+			urlLog = file("urlLog.txt","w")
+			urlLog.write(itemURL)
+			urlLog.close()
 		printLine()
 		print(itemURL)
 		printLine()
