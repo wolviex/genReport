@@ -160,6 +160,20 @@ def genTitle(fname):
 		title += ", "+LogReader.getNumHarddrives(HDinfo)
 	return title
 
+def getItemURL(itemID):
+	itemRequest =	{
+						"ItemID":itemID,
+						"OutputSelector":"ViewItemURL"
+					}
+
+	request = api.execute("GetItem",itemRequest).dict()
+
+	return request["Item"]["ListingDetails"]["ViewItemURL"]
+	
+										
+					
+					
+
 def endAllItems():
 	d = api.execute('GetUser', None)
 	userID = d.dict()["User"]["UserID"]
@@ -222,6 +236,13 @@ def setItemConfig(model, item):
 
 	return item
 
+def printLine():
+	try:
+		rows, columns = os.popen('stty size', 'r').read().split()
+		print("-" * int(columns))
+	except Exception as e:
+		print("------------------------------")
+
 def postItem(fname):  
 	try:
 		pictureURLs = uploadPicture(fname)
@@ -264,17 +285,9 @@ def postItem(fname):
 		myitem = setItemConfig(model,myitem)
 
 		if VerifyFlag:
-			try:
-				rows, columns = os.popen('stty size', 'r').read().split()
-				print("-" * int(columns))
-			except Exception as e:
-				print("------------------------------")
+			printLine()
 			print("TITLE:{}".format(postTitle))
-			try:
-				rows, columns = os.popen('stty size', 'r').read().split()
-				print("-" * int(columns))
-			except Exception as e:
-				print("------------------------------")
+			printLine()
 			print("DESCRIPTION:\n{}".format(postInfo.replace("<br>","\n")))
 			while True:
 				print("Is this ok? (y/n)")
@@ -290,7 +303,14 @@ def postItem(fname):
 
 
 
-		d = api.execute('AddItem', myitem)
+		d = api.execute('AddItem', myitem).dict()
+		
+		itemURL = getItemURL(d["ItemID"])
+
+		printLine()
+		print(itemURL)
+		printLine()
+
 		#print(d.dict()["User"]["UserID"])
 		
 	except ConnectionError as e:
