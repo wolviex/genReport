@@ -1,4 +1,4 @@
-import ebaysdk
+﻿import ebaysdk
 import datetime
 import jwjson
 import sys
@@ -47,12 +47,15 @@ def dump(api, full=False):
         print("Response Reply: %s" % replystr[:150])
 
 def getPictures(name):
+	realpath = os.path.dirname(os.path.realpath(sys.argv[0]))
 	pictureCfg = getConfig("default","PictureInfo")
 	fileTypes = pictureCfg["FileTypes"].split(",")
 	pictureList = []
-	picPath = "{}/{}".format(pictureCfg["Path"],name)
+	picPath = "{}{}/{}".format(realpath,pictureCfg["Path"][1:],name)
 	if os.path.isdir(picPath):
+
 		files = os.listdir(picPath)
+		print("Nope")
 		for file in files:
 			fname,ext = os.path.splitext(file)
 			if ext.lower() in fileTypes:
@@ -65,7 +68,6 @@ def uploadPicture(fname):
 		pictureList = getPictures(LogReader.getSerial(fname))
 		if len(pictureList) <= 0:
 			pictureList = getPictures(model)
-
 		pictureURLs = []
 		if len(pictureList) <= 0:
 			return None
@@ -73,7 +75,8 @@ def uploadPicture(fname):
 			files = {'file': ('EbayImage', file(picture, 'rb'))}
 			pictureData = {
 					"WarningLevel": "High",
-					"PictureName": model
+					"PictureName": model,
+                    "PictureSet":"Supersize"
 				}
 			response = api.execute('UploadSiteHostedPictures', pictureData, files=files)
 			pictureURLs.append(response.dict()['SiteHostedPictureDetails']['FullURL'])
@@ -101,10 +104,12 @@ def getConfig(model,varName=None):
 			if varName is None:
 				return cValues[model]
 			if cValues[model].has_key(varName):
+				print(cValues[model][varName])
 				if type(cValues[model][varName]) is str or type(cValues[model][varName]) is unicode:
 					
 					if cValues[model][varName][:2] == "./":
 						realpath = os.path.dirname(os.path.realpath(sys.argv[0]))
+						
 						return realpath + cValues[model][varName][1:]
 
 				return cValues[model][varName]
@@ -258,8 +263,8 @@ def postItem(fname):
 		if pictureURLs is not None:
 			pictureHTML = ""
 			for url in pictureURLs:
-				pictureHTML += '<li><img src="{}"></li>'.format(url)
-			htmlData = htmlData.replace("{{ image src }}",'<img src="{}">'.format(pictureURLs[0]))
+				pictureHTML += '<img src="{}" style="display:none;">'.format(url)
+			htmlData = htmlData.replace("{{ image src }}",'{}'.format(pictureHTML))
 		else:
 			htmlData = htmlData.replace("{{ image src }}","")
 		#htmlData = htmlData.replace("{{ image src }}","<img src='http://i.ebayimg.sandbox.ebay.com/00/s/OTAwWDE2MDA=/z/6FkAAOSwErpWHpfG/$_1.JPG?set_id=8800005007'>")

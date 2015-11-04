@@ -72,10 +72,170 @@
 				margin-left: 10px
 				margin-right: 10px
 			}
+
+            #pictureSlider {
+                height: 300px;
+                width: 400px;
+                
+            }
+            #pictureSlider .buttonRow {
+                display:table-row;
+                width:100%;
+                height:22px;
+                vertical-align:middle;
+                
+
+            }
+            #pictureSlider li {
+                text-align:center;
+                display: inline-block;
+            }
+            #pictureSlider ul {
+                display: inline-block;
+            }
+            #pictureSlider #sliderImage {
+                height:100%;
+				background-repeat: no-repeat;
+				background-position: center; 
+                overflow:hidden;
+				z-index:1;
+            }
+            #pictureSlider .sliderButton {
+                z-index:999;
+            }
+            #pictureSlider .buttonLeft {
+                display: inline-block;
+                text-align:left;
+                width:50%;
+            }
+            #pictureSlider .buttonRight {
+                display: inline-block;
+                text-align:right;
+                width:50%;
+            }
+            #pictureSlider #nextButton {
+                display: inline-block;
+            }
+            #pictureSlider #prevButton {
+                display: inline-block;
+				z-index:2;
+            }
+            #pictureSlider li img {
+
+                max-width: 300px;
+                max-height: 300px;
+                width: auto;
+                height: auto;
+                
+            }
+
+           
+              
 			
 		</style>
 		<script type="text/javascript">
 			window.$zopim||(function(d,s){var z=$zopim=function(c){z._.push(c)},$=z.s=d.createElement(s),e=d.getElementsByTagName(s)[0];z.set=function(o){z.set._.push(o)};z._=[];z.set._=[];$.async=!0;$.setAttribute('charset','utf-8');$.src='//v2.zopim.com/?1riB2U3rUIp6WAB0kBuWKVsJWhPcjKME';z.t=+new Date;$.type='text/javascript';e.parentNode.insertBefore($,e)})(document,'script');
+		</script>
+		<script type="text/javascript">
+		
+		largestWidth = 0;
+		largestHeight = 0;
+		paused = false;
+		currImage = 0;
+		
+		function getLargestWH(items) {
+			var length = items.length;
+			
+			for(var i=0; i<length; i++) {
+				if(items[i].naturalWidth > largestWidth)
+					largestWidth = items[i].naturalWidth;
+				if(items[i].naturalHeight > largestHeight)
+					largestHeight = items[i].naturalHeight;
+			}
+		}
+		
+		function getNextImage() {
+			var sliderDiv = document.getElementById("sliderImage");
+			var nodeLength = sliderDiv.childNodes.length;
+			var title = document.getElementById("ebay_title");
+			
+			
+			currImage += 1;
+			if(currImage >= nodeLength)
+				currImage = 0;
+				
+			sliderDiv.style.backgroundImage = "url('"+sliderDiv.childNodes[currImage].src+"')";
+			pauseSlider()
+		}
+		function getPrevImage() {
+			var sliderDiv = document.getElementById("sliderImage");
+			var nodeLength = sliderDiv.childNodes.length;
+			var title = document.getElementById("ebay_title");
+			
+			
+			currImage -= 1;
+			if(currImage < 0)
+				currImage = nodeLength-1;
+				
+			sliderDiv.style.backgroundImage = "url('"+sliderDiv.childNodes[currImage].src+"')";
+			pauseSlider()
+		}
+		function unpauseSlider() {
+			paused = false
+		}
+		function pauseSlider() {
+		
+			if(paused)
+				return;
+		
+			paused = true;
+			window.setTimeout(unpauseSlider,10000);
+		}
+		function getNextImageTimer() {
+			
+			var sliderDiv = document.getElementById("sliderImage");
+			var nodeLength = sliderDiv.childNodes.length;
+			var title = document.getElementById("ebay_title");
+			if(!paused) {
+				
+				currImage += 1;
+				if(currImage >= nodeLength)
+					currImage = 0;
+					
+				sliderDiv.style.backgroundImage = "url('"+sliderDiv.childNodes[currImage].src+"')";
+			}
+			window.setTimeout(getNextImageTimer,3000);
+			
+		}
+		
+		function prevClick(elem) {
+			getPrevImage();
+		}
+		
+		function nextClick(elem) {
+			getNextImage();
+		}
+		
+		
+		
+		function init() {
+			var sliderDiv = document.getElementById("sliderImage");
+			var title = document.getElementById("ebay_title");
+			var table = document.getElementById("pictureSlider");
+
+			if(sliderDiv.childNodes.length == 0) {
+				table.style.display = "none";
+				return;
+			}
+			getLargestWH(sliderDiv.childNodes);
+			sliderDiv.style.backgroundImage = "url('"+sliderDiv.childNodes[0].src+"')";
+			table.style.width = largestWidth + "px";
+			table.style.height = largestHeight + "px";
+			
+			window.setTimeout(getNextImageTimer,3000);
+			
+		}
+		window.onload = init;
 		</script>
 	</head>
 	
@@ -100,11 +260,16 @@
 					{{ description }}
 					<!--PostDescription-->
 				</div>
+                
 				<div class="picture_wrapper" id="ebay_pictures">
 						<!--PreImage-->
-
-							{{ image src }}						
-						
+                            <table id="pictureSlider" style="display:inline-block; position:relative;">
+                                <tr style="vertical-align:middle;">
+                                    <td style="width:22px;"><img src="https://dl.dropboxusercontent.com/s/kcxsmgbx4vre7rl/prev.png" class="sliderButton" id="prevButton" onclick="prevClick()" /></td>
+                                    <td style=><div id="sliderImage" onclick="pauseSlider();">{{ image src }}</div></td>
+                                    <td style="width:22px; text-align:right;"><img src="https://dl.dropboxusercontent.com/s/rol8o4pw1xsjz4z/next.png" class="sliderButton" id="nextButton" onclick="nextClick()" /></td>
+                                </tr>
+                            </table>
 						<!--PostImage-->
 				</div>
 				<p style="text-align: center;">
