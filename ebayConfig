@@ -73,13 +73,16 @@
 	"PowerEdge 2950": 
 	{
 		"PostalCode": "N1E5L2",
-		"StartPrice":"150",
+		"StartPrice":"50",
 		"SpecialNotes":"Rail kit not included.",
 		"ItemSpecifics":
 		{
 			"Brand":"Dell",
 #			"RAID Levels":"0, 1, 5, 6, RAID 10, RAID 50, RAID 60",
 			"Form Factor":"Rack-Mountable 2U"
+			"Processor Type":"Xeon"
+			"Product Line":"PowerEdge"
+			
 		},
 		"SellerProfiles":
 		{
