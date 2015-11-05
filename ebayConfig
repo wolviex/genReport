@@ -26,6 +26,24 @@
 		"StartPrice":"500",
 		"PrimaryCategory": {"CategoryID": "11211"},
 		"Site": "US",
+		"ReturnPolicy":
+ -		{
+ -			"ReturnsAcceptedOption": "ReturnsAccepted",
+ -			"RefundOption": "MoneyBack",
+ -			"ReturnsWithinOption": "Days_30",
+ -			"Description": "If a unit is confirmed DOA, we will refund your shipping costs",
+ -			"ShippingCostPaidByOption": "Buyer"
+ -		},
+ -		"ShippingDetails":
+ -		{
+ -			"ShippingType": "Flat",
+ -			"ShippingServiceOptions":
+ -			{
+ -				"ShippingServicePriority": "1",
+ -				"ShippingService": "USPSMedia",
+ -				"ShippingServiceCost": "100.00"
+ -			}
+ -		},
 		"SellerProfiles":
 		{
 			"SellerShippingProfile":
