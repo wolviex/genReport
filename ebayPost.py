@@ -50,9 +50,14 @@ def dump(api, full=False):
 def getPictures(name):
 	realpath = os.path.dirname(os.path.realpath(sys.argv[0]))
 	pictureCfg = getConfig("default","PictureInfo")
+	picPath = pictureCfg["Path"];
 	fileTypes = pictureCfg["FileTypes"].split(",")
 	pictureList = []
-	picPath = "{}{}/{}".format(realpath,pictureCfg["Path"][1:],name)
+	
+	if picPath[:2] == "./":
+		picPath = "{}{}/{}".format(realpath,pictureCfg["Path"][1:],name)
+	else:
+		picPath = "{}/{}".format(picPath,name)
 	if os.path.isdir(picPath):
 
 		files = os.listdir(picPath)
@@ -60,8 +65,8 @@ def getPictures(name):
 			fname,ext = os.path.splitext(file)
 			if ext.lower() in fileTypes:
 				pictureList.append("{}/{}".format(picPath,file))
-	 else:
-                print("ERROR: picPath '%s' does not exist." % picPath)
+	else:
+		print("ERROR: picPath '%s' does not exist." % picPath)
 	
 	return pictureList
 
