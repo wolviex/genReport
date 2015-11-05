@@ -248,8 +248,13 @@ def printLine():
 	except Exception as e:
 		print("------------------------------")
 
-def verifyPost(postInfo,postTitle):
+def verifyPost(fname,postInfo,postTitle):
+
+	pictures = getPictures(LogReader.getSerial(fname))
+	if len(pictures) <= 0:
+		pictures = getPictures(LogReader.getModel(fname))
 	printLine()
+	print("Picture #: {}".format(len(pictures)))
 	print("TITLE:{}".format(postTitle))
 	printLine()
 	print("DESCRIPTION:\n{}".format(postInfo.replace("<br>","\n")))
@@ -271,7 +276,7 @@ def postItem(fname):
 		postTitle = genTitle(fname)
 		postInfo = genInfo(fname)
 		if VerifyFlag:
-			if verifyPost(postInfo,postTitle) is not None:
+			if verifyPost(fname,postInfo,postTitle) is not None:
 				return
 		pictureURLs = uploadPicture(fname)
 		template = file(os.path.join(dn,"template.html"),"r")
