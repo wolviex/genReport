@@ -50,6 +50,14 @@
 			{
 				"ShippingProfileName": "2UServer"
 			}
+			"SellerReturnProfile":
+			{
+				"ReturnProfileName": "KCReturns"
+			}
+			"SellerPaymentProfile":
+			{
+				"PaymentProfileName": "Know"
+			}
 		}
 		
 	},
@@ -75,9 +83,9 @@
 		},
 		"SellerProfiles":
 		{
-			"SellerShippingProfile":
+			"SellerPaymentProfile":
 			{
-				"ShippingProfileName": "2UServer"
+				"PaymentProfileName": "GES"
 			}
 		}
 		
