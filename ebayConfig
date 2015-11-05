@@ -22,8 +22,8 @@
 		"PayPalEmailAddress": "sales@knowledgecomputers.net",
 		"PostalCode": "V9L6W3",
 		"Quantity": "1",
-		"ListingType":"Chinese",
-		"StartPrice":"500",
+		"ListingType":"FixedPriceItem",
+		"StartPrice":"5000",
 		"PrimaryCategory": {"CategoryID": "11211"},
 		"Site": "US",
 		"ReturnPolicy":
@@ -73,7 +73,9 @@
 	"PowerEdge 2950": 
 	{
 		"PostalCode": "N1E5L2",
+		"ListingType":"Chinese",
 		"StartPrice":"50",
+		"BuyItNowPrice":"350.00",
 		"SpecialNotes":"Rail kit not included.",
 		"ItemSpecifics":
 		{
