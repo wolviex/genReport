@@ -4,7 +4,7 @@
 		#Script related config
 
 		"APICommandList":"./ebayAPICommands",
-		"Domain":"api.ebay.com",
+		"Domain":"api.sandbox.ebay.com",
 		"PictureInfo":
 		{
 		"Path":"/srv/incoming/ServerTestPics",
