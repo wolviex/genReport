@@ -60,6 +60,9 @@ def getPictures(name):
 			fname,ext = os.path.splitext(file)
 			if ext.lower() in fileTypes:
 				pictureList.append("{}/{}".format(picPath,file))
+	 else:
+                print("ERROR: picPath '%s' does not exist." % picPath)
+	
 	return pictureList
 
 def uploadPicture(fname):
