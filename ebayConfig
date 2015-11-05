@@ -49,11 +49,11 @@
 			"SellerShippingProfile":
 			{
 				"ShippingProfileName": "2UServer"
-			}
+			},
 			"SellerReturnProfile":
 			{
 				"ReturnProfileName": "KCReturns"
-			}
+			},
 			"SellerPaymentProfile":
 			{
 				"PaymentProfileName": "Know"
@@ -79,8 +79,8 @@
 		{
 			"Brand":"Dell",
 #			"RAID Levels":"0, 1, 5, 6, RAID 10, RAID 50, RAID 60",
-			"Form Factor":"Rack-Mountable 2U"
-			"Processor Type":"Xeon"
+			"Form Factor":"Rack-Mountable 2U",
+			"Processor Type":"Xeon",
 			"Product Line":"PowerEdge"
 			
 		},
