@@ -1,4 +1,4 @@
-import sqlite3;
+﻿import sqlite3;
 import array
 import os
 import sys
@@ -365,19 +365,20 @@ def getHarddrives(fname):
 			prd = re.search(r"Product.*?: (.*?)\n", x,re.MULTILINE | re.DOTALL).group(1);
 			tray = re.search(r"Target.*?: (.*?)\n", x,re.MULTILINE | re.DOTALL).group(1);
 			
-			longestStr = -1;
-			prdSearch = re.findall(r"[\w\d]*",prd);
-			for id in range(0,len(prdSearch)):
-				if longestStr < 0:
-					longestStr = id;
-				else:
-					if len(prdSearch[id]) > len(prdSearch[longestStr]):
-						longestStr = id;
+			#longestStr = -1;
+			#prdSearch = re.findall(r"[\w\d]*",prd);
+			#for id in range(0,len(prdSearch)):
+			#	if longestStr < 0:
+			#		longestStr = id;
+			#	else:
+			#		if len(prdSearch[id]) > len(prdSearch[longestStr]):
+			#			longestStr = id;
 					
-			if longestStr >= 0:
-				prd = str(prdSearch[longestStr]);
+			#if longestStr >= 0:
+			#	prd = str(prdSearch[longestStr]);
 				
-			
+			prd = prd.replace("ATA ", "")
+			prd = prd.replace("SAMSUNG ", "")
 			
 			hdTrays[int(tray)] += 1;
 
