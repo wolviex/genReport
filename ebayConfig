@@ -22,33 +22,33 @@
 		"PayPalEmailAddress": "sales@knowledgecomputers.net",
 		"PostalCode": "V9L6W3",
 		"Quantity": "1",
-		"ListingType":"Chinese",
-		"StartPrice":"500",
+		"ListingType":"FixedPriceItem",
+		"StartPrice":"5000",
 		"PrimaryCategory": {"CategoryID": "11211"},
 		"Site": "US",
 		"ReturnPolicy":
-		{
-			"ReturnsAcceptedOption": "ReturnsAccepted",
-			"RefundOption": "MoneyBack",
-			"ReturnsWithinOption": "Days_30",
-			"Description": "If a unit is confirmed DOA, we will refund your shipping costs",
-			"ShippingCostPaidByOption": "Buyer"
-		},
-		"ShippingDetails":
-		{
-			"ShippingType": "Flat",
-			"ShippingServiceOptions":
-			{
-				"ShippingServicePriority": "1",
-				"ShippingService": "USPSMedia",
-				"ShippingServiceCost": "100.00"
-			}
-		},
+ 		{
+ 			"ReturnsAcceptedOption": "ReturnsAccepted",
+ 			"RefundOption": "MoneyBack",
+ 			"ReturnsWithinOption": "Days_30",
+ 			"Description": "If a unit is confirmed DOA, we will refund your shipping costs",
+ 			"ShippingCostPaidByOption": "Buyer"
+ 		},
+ 		"ShippingDetails":
+ 		{
+ 			"ShippingType": "Flat",
+ 			"ShippingServiceOptions":
+ 			{
+ 				"ShippingServicePriority": "1",
+ 				"ShippingService": "USPSMedia",
+ 				"ShippingServiceCost": "100.00"
+ 			}
+ 		},
 		"SellerProfiles":
 		{
 			"SellerShippingProfile":
 			{
-				"ShippingProfileName": "2UServer"
+				"ShippingProfileName": "StandardServer"
 			},
 			"SellerReturnProfile":
 			{
@@ -73,7 +73,9 @@
 	"PowerEdge 2950": 
 	{
 		"PostalCode": "N1E5L2",
+		"ListingType":"Chinese",
 		"StartPrice":"50",
+		"BuyItNowPrice":"350.00",
 		"SpecialNotes":"Rail kit not included.",
 		"ItemSpecifics":
 		{
