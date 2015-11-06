@@ -70,6 +70,15 @@ def getPictures(name):
 	
 	return pictureList
 
+def mergeDictionary(dict1, dict2):
+	for k,v in dict2.items():
+		if not dict1.has_key(k):
+			dict1[k] = v;
+		elif isinstance(v,dict):
+			mergeDictionary(dict1[k],v)
+		else:
+			dict1[k] = v;
+
 def uploadPicture(fname):
 	try:
 		model = LogReader.getModel(fname)
@@ -229,6 +238,8 @@ def setItemConfig(model, item):
 	
 	global APIcmds
 	def f(cfgValues,item):
+		tempDict = item
+		cfgDict = {}
 		for k,v in cfgValues.items():
 
 			if k == "ItemSpecifics": #Skip item specifics so it doesn't overwrite the generated ones
@@ -236,8 +247,10 @@ def setItemConfig(model, item):
 
 			cmd = "Item.{}".format(k)
 			if cmd in APIcmds:
-				item["Item"][k] = v
-		return item
+				cfgDict[k] = v
+
+		mergeDictionary(tempDict["Item"],cfgDict)
+		return tempDict
 
 	defaultCfg = getConfig("default")
 	modelCfg  = getConfig(model)
@@ -327,9 +340,10 @@ def postItem(fname):
 		d = api.execute('AddItem', myitem).dict()
 		
 		itemURL = getItemURL(d["ItemID"])
+
 		if LogURL:
 			urlLog = file("urlLog.txt","w")
-			urlLog.write(itemURL)
+			#urlLog.write()
 			urlLog.close()
 		printLine()
 		print(itemURL)
