@@ -140,6 +140,7 @@ def getHDInfo(model):
 	
 	addHDtoDB = False;
 	db = sqlite3.connect(getConfigValue("DBPath"));
+	infoFields = getInfoFields()
 	
 	if hasDBTable(db) == False:
 		print("Harddrive table not found. Creating.")
@@ -385,7 +386,6 @@ def getHarddrives(fname):
 			if hdTrays[int(tray)] > 1:
 				continue;
 
-			#print(prd + " " +tray)
 			
 			try:
 				HDDS[(mnf,prd)] += 1;
@@ -396,13 +396,19 @@ def getHarddrives(fname):
 		hdStringArray = set();
 		
 		for k,v in HDDS.items():
+			
 			HDInfo = getHDInfo(str(k[1]))
-			hdStringArray.add((getRealHDBrand(str(k[1]),str(k[0])),)+HDInfo+(str(v),))
+			
+			hdStringArray.add((getRealHDBrand(str(k[1]),str(k[0])),)+HDInfo+(str(v),k[1]))
+		
 		
 	except AttributeError:
 		return None
 	if len(lString) <= 0:
 		return None
+
+	print hdStringArray
+
 	return hdStringArray;
 	
 def getTotalRam(fname):
