@@ -181,7 +181,10 @@ def getHDInfo(model):
 						db.close();
 						return infoDict['Capacity'], infoDict['RPM'], infoDict['Form Factor']
 					elif line.lower() == "n":
-						return "No HDD Info"
+						c.execute("INSERT INTO harddrives VALUES ('{0}', '{1}', '{7}', '{2}','{3}', '{4}', '{5}', '{6}')".format(*(("None Found",)*7+(model,))))
+						db.commit();
+						db.close();
+						return ("No Info",)*3;
 					else:
 						print("Invalid selection")
 
