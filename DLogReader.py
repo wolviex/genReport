@@ -107,14 +107,18 @@ def getHDInfoFromSite(site, model):
 	res = str(conn.getresponse().read()); 
 	link = ""
 	links = re.findall(linkRegEx, res,re.IGNORECASE)
+	print(links)
 	if len(links) > 1:
 		print("Found more than 1 of the same HDD, looking for Enterprise edition...")
 		enterprise = False
-		for y,x in links:
+		for l in links:
+
+			x = l[int((linkIndex != 1))]
+
 			if x.lower().find("enterprise") >= 0:
 				print("Found Enterprise edition")
 				enterprise = True
-				link = y
+				link = l[linkIndex]
 				break
 		if not enterprise:
 			print("Enterprise edition not found. Using first link")
@@ -153,7 +157,7 @@ def getHDInfo(model):
 		c.execute("SELECT * FROM harddrives WHERE model='"+model+"'");
 		
 		hdData = c.fetchone();
-		return hdData[4],hdData[5],hdData[7];
+		return hdData[0], hdData[4],hdData[5],hdData[7];
 	except Exception:
 		print("Adding "+model+" to database.")
 		addHDtoDB = True;
@@ -169,7 +173,7 @@ def getHDInfo(model):
 				c.execute("INSERT INTO harddrives VALUES ('{0}', '{1}', '{7}', '{2}','{3}', '{4}', '{5}', '{6}')".format(*(tuple(x for (k,x) in infoDict.items())+(model,))))
 				db.commit();
 				db.close();
-				return infoDict['Capacity'], infoDict['RPM'], infoDict['Form Factor']
+				return infoDict['Brand'], infoDict['Capacity'], infoDict['RPM'], infoDict['Form Factor']
 			else:
 				print("Info for {} not found. Would you like to add? (y/n)".format(model))
 				while True:
@@ -179,7 +183,7 @@ def getHDInfo(model):
 						c.execute("INSERT INTO harddrives VALUES ('{0}', '{1}', '{7}', '{2}','{3}', '{4}', '{5}', '{6}')".format(*(tuple(x for (k,x) in infoDict.items())+(model,))))
 						db.commit();
 						db.close();
-						return infoDict['Capacity'], infoDict['RPM'], infoDict['Form Factor']
+						return infoDict['Brand'], infoDict['Capacity'], infoDict['RPM'], infoDict['Form Factor']
 					elif line.lower() == "n":
 						c.execute("INSERT INTO harddrives VALUES ('{0}', '{1}', '{7}', '{2}','{3}', '{4}', '{5}', '{6}')".format(*(("None Found",)*7+(model,))))
 						db.commit();
@@ -192,14 +196,14 @@ def getHDInfo(model):
 
 
 
-			#Make sure the model is in the link
+			
 
-			return infoDict['Capacity'], infoDict['RPM'], infoDict['Form Factor']
+			return infoDict['Brand'], infoDict['Capacity'], infoDict['RPM'], infoDict['Form Factor']
 		except AttributeError as e:
 			traceback.print_exc()
-			sys.exit(0)
+			db.close();
 			return "No HDD Info found";
-	db.close();
+	
 			
 def getRealHDBrand(model,brand):
 	try:
@@ -296,17 +300,22 @@ def getModel(fname):
 	except AttributeError:
 		lString = "Model name not found";
 	serverlog.close();
-	return lString;
+
+	return " ".join(lString.split())
 	
 def getProcInfo(fname):
 	serverlog = open(fname, 'r');	
 	lString = getRecentLog(serverlog.read());
 	serverlog.close();
 	try:
+		
+
 		lString = re.search(r"Processor Information.*?System Information",lString,flags=re.MULTILINE | re.DOTALL).group(0);
-		lString = re.findall(r"\nVersion.*?: (.*?)\n",lString);
-		lString = [" ".join(x.split()) for x in lString]
-		count = dict(Counter(lString))
+		
+		regEx = r"\nManufacturer.*?: (.*?)\n[\s\S]{0,90}\nVersion.*?: (.*?)\n"
+		cpuList = re.findall(regEx,lString)
+		infoList = [" ".join(x.split()) if y == "N/A" else " ".join(y.split()) for x,y in cpuList]
+		count = dict(Counter(infoList))
 		if count.has_key("N/A"):
 			count.pop("N/A")
 		return count;
@@ -351,13 +360,38 @@ def getHDInterface(fname):
 	return lString.group(1)
 		
 			
-	
-	
 def getHarddrives(fname):
 	serverlog = open(fname, 'r');
 	lString = getRecentLog(serverlog.read());
 
-	lString = re.findall(r"\n\w*? [0-9\-]*? Disk\n.*?-*?\n.*?Encryption",lString,re.MULTILINE | re.DOTALL);
+	regEx = r"\n\w{1,10} (?:[0-9\-]{0,10}|Disk) (?:[0-9\-]{0,10}|Disk)\n.*?-\n.*?\n\n"
+	#r"\n\w*? [0-9\-]*? Disk\n.*?-*?\n.*?Encryption"
+	infoFields = re.findall(regEx,lString,re.MULTILINE | re.DOTALL)
+
+	hddList = []
+	returnList = []
+	for field in infoFields:
+		modelSearch = re.search(r"Product.*?: (.*?)\n", field)
+		if modelSearch is not None:
+			hddList.append(modelSearch.group(1))
+	
+	hddDict = dict(Counter(hddList))
+
+	for k,v in hddDict.items():
+		HDInfo = getHDInfo(k) + (v,)
+		returnList.append(HDInfo)
+
+	return returnList
+	
+def getHarddrives2(fname):
+	serverlog = open(fname, 'r');
+	lString = getRecentLog(serverlog.read());
+
+	regEx = r"\n\w{1,10} (?:[0-9\-]|Disk) (?:[0-9\-]|Disk)\n.*?\n\n\n" #.*?-*?\n.*?Encryption"
+	#r"\n\w*? [0-9\-]*? Disk\n.*?-*?\n.*?Encryption"
+	lString = re.findall(regEx,lString,re.MULTILINE | re.DOTALL);
+
+	return lString;
 	
 	rString = "";
 	
@@ -365,21 +399,9 @@ def getHarddrives(fname):
 	hdTrays = array.array('i',(0 for i in range(0,20)))
 	try:
 		for x in lString:
-			mnf = re.search(r"Manufacturer.*?: (.*?)\n", x,re.MULTILINE | re.DOTALL).group(1);
+			#mnf = re.search(r"Manufacturer.*?: (.*?)\n", x,re.MULTILINE | re.DOTALL).group(1);
 			prd = re.search(r"Product.*?: (.*?)\n", x,re.MULTILINE | re.DOTALL).group(1);
-			tray = re.search(r"Target.*?: (.*?)\n", x,re.MULTILINE | re.DOTALL).group(1);
-			
-			#longestStr = -1;
-			#prdSearch = re.findall(r"[\w\d]*",prd);
-			#for id in range(0,len(prdSearch)):
-			#	if longestStr < 0:
-			#		longestStr = id;
-			#	else:
-			#		if len(prdSearch[id]) > len(prdSearch[longestStr]):
-			#			longestStr = id;
-					
-			#if longestStr >= 0:
-			#	prd = str(prdSearch[longestStr]);
+			#tray = re.search(r"Target.*?: (.*?)\n", x,re.MULTILINE | re.DOTALL).group(1);
 				
 			prd = prd.replace("ATA ", "")
 			prd = prd.replace("SAMSUNG ", "")
