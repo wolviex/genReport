@@ -22,7 +22,7 @@ def init():
 
 failFlag = False
 LogURL = False
-
+cfgOverride = {}
 def dump(api, full=False):
 
 	print("\n")
@@ -245,9 +245,13 @@ def setItemConfig(model, item):
 			if k == "ItemSpecifics": #Skip item specifics so it doesn't overwrite the generated ones
 				continue
 
+			
+
 			cmd = "Item.{}".format(k)
 			if cmd in APIcmds:
 				cfgDict[k] = v
+				if cfgOverride.has_key(k):
+					cfgDict[k] = cfgOverride[k]
 
 		mergeDictionary(tempDict["Item"],cfgDict)
 		return tempDict
@@ -372,12 +376,16 @@ for argc in sys.argv:
 
 	if argc == "-abs":
 		AbsolutePath = True
-
+	elif argc == "-?" or argc == "-h":
+		print("-v Verify posting before uploading")
+		print("-lt Force ListingType of item")
 	elif argc == "-endall":
 		endAllItems()
 	elif argc == "-v" or argc == "-verify":
 		VerifyFlag = True
-		
+	elif argc[:3] == "-lt":
+		listingType = argc.split("=")[-1]
+		cfgOverride["ListingType"] = listingType
 	else:
 		if argc.find(".txt") > 0:
 			logFile = argc[0:argc.find(".txt")] + ".txt"
