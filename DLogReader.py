@@ -188,7 +188,7 @@ def getHDInfo(model):
 						c.execute("INSERT INTO harddrives VALUES ('{0}', '{1}', '{7}', '{2}','{3}', '{4}', '{5}', '{6}')".format(*(("None Found",)*7+(model,))))
 						db.commit();
 						db.close();
-						return ("No Info",)*3;
+						return ("No Info",)*4;
 					else:
 						print("Invalid selection")
 
@@ -243,9 +243,9 @@ def getAsset(serial):
 			if sh.cell(x,16).value == serial:
 				return str(int(sh.cell(x,0).value));
 	except Exception:
-		return;
+		return '';
 		
-	return;
+	return '';
 
 def getFails(fname):
 	serverlog = open(fname, 'r');

@@ -1,12 +1,15 @@
 ﻿import xlsxwriter
 import re
 import xlrd
+import xlwt;
 import sys
 import array;
 import time;
 import os;
 import signal
 import curses
+import datetime
+from collections import Counter
 from ftplib import FTP
 
 import traceback;
@@ -14,7 +17,34 @@ import traceback;
 from sql_ui import SQLGui
 import DLogReader as LogReader
 
-def formatXML(workbook,worksheet,rnum):
+serverList = []
+masterServerList = []
+
+def formatXML(workbook, worksheet,rnum):
+	
+	headerStyle = xlwt.Style.easyxf("font: bold on; align: wrap on, vert centre, horiz center")
+	worksheet.col(0).width = 15 * 256
+	worksheet.col(1).width = 15 * 256
+	worksheet.col(2).width = 15 * 256
+	worksheet.col(3).width = 50 * 256
+	worksheet.col(4).width = 40 * 256
+	worksheet.col(5).width = 50 * 256
+	worksheet.row(0).height = 20 * 256
+	worksheet.write(0,0, "Service Tag",headerStyle);
+	worksheet.write(0,1, "Asset",headerStyle);
+	worksheet.write(0,2, "Model",headerStyle);
+	worksheet.write(0,3, "Specs",headerStyle);
+	worksheet.write(0,4, "Notes",headerStyle);
+	worksheet.write(0,5, "Fails",headerStyle);
+	
+	return
+
+
+def setColWidth(worksheet, colFrom, colTo, width):
+	for i in range(colFrom, colTo):
+		worksheet.col(i).width = width * 256
+
+def formatXML2(workbook,worksheet,rnum):
 	cell_format = workbook.add_format({'bold': True});
 	font_format = workbook.add_format();
 	font_format.set_font_size(10);
@@ -30,31 +60,86 @@ def formatXML(workbook,worksheet,rnum):
 	worksheet.write(0,1, "Asset");
 	worksheet.write(0,2, "Model");
 	worksheet.write(0,3, "Specs");
-	worksheet.write(0,4, "Notes");
-	worksheet.write(0,5, "Fails");
+	worksheet.write(0,4, "Fails");
+	worksheet.write(0,5, "Notes");
 	
 	return;
 	
 def genXML(rnum):
-	workbook = xlsxwriter.Workbook(LogReader.Config["XLPath"])
-	worksheet = workbook.add_worksheet();
+	workbook = xlwt.Workbook()
+	worksheet = workbook.add_sheet("Servers");
 	formatXML(workbook,worksheet,rnum);
-	return workbook;
+	return workbook, worksheet;
 	
 
 	
-def addServer(workbook, fname, index):
+def addServer(worksheet, fname, index):
+
+	global serverList
 
 	serial = LogReader.getSerial(fname);
 	index += 1;
-	worksheet = workbook.worksheets()[0];
-	worksheet.write(index,0, serial);
-	worksheet.write(index,1, LogReader.getAsset(serial));
-	worksheet.write(index,2, LogReader.getModel(fname));
-	worksheet.write(index,3, LogReader.genInfo(fname));
-	worksheet.write(index,5, LogReader.getFails(fname));
+
+	serverList.append((serial,LogReader.getAsset(serial),LogReader.getModel(fname),LogReader.genInfo(fname),LogReader.getFails(fname)))
+
+	#worksheet.write(index,0, serial);
+	#worksheet.write(index,1, LogReader.getAsset(serial));
+	#worksheet.write(index,2, LogReader.getModel(fname));
+	#worksheet.write(index,3, LogReader.genInfo(fname),fontSize);
+	#worksheet.write(index,5, LogReader.getFails(fname)); 
+
+def getInfoFromXML():
+	try:
+		global masterServerList
+		wb = xlrd.open_workbook(LogReader.Config["XLPath"])
+		sh = wb.sheet_by_index(0)
+		num_rows = sh.nrows
+		for x in range(1,num_rows):
+			masterServerList.append((sh.cell(x,0).value,sh.cell(x,1).value,sh.cell(x,2).value,sh.cell(x,3).value,sh.cell(x,4).value,sh.cell(x,5).value))
+	except Exception:
+		return
+		
 
 
+def addInfoToXML(worksheet):
+	global serverList, masterServerList
+	popList = []
+	for info in masterServerList:
+		serial = info[0]
+		for info2 in serverList:
+			if serial == info2[0]:
+				masterServerList.pop(masterServerList.index(info))
+
+	list = masterServerList + serverList;
+	
+	for i in range(1,len(list)+1):
+		
+		for x in range(0,len(list[i-1])):
+			worksheet.write(i,x, list[i-1][x])
+
+def genSingleXML():
+	global serverList
+	path = os.path.split(LogReader.Config["XLPath"])[0]
+	workbook, worksheet = genXML(len(serverList))
+	for i in range(1,len(serverList)+1):		
+		for x in range(0,len(serverList[i-1])):
+			worksheet.write(i,x, serverList[i-1][x])
+	saveWorkBook(workbook, "{}/{}.xls".format(path,datetime.datetime.today().strftime("%d-%m-%y")))
+		
+def saveWorkBook(workbook, path):
+	saveIndex = 0
+	while True:
+		filename, extension = os.path.splitext(path)
+		p = filename + extension
+		if saveIndex > 0:
+			p = "{} ({}){}".format(filename,saveIndex,extension)
+		try:
+			workbook.save(p)
+			print("Saved {}".format(p))
+			break
+		except Exception:
+			pass
+		saveIndex += 1
 
 def makeSQLGui():
 	
@@ -67,7 +152,7 @@ def makeSQLGui():
 
 	
 	
-assets = set();
+assets = set()
 
 
 
@@ -105,7 +190,7 @@ if len(assets) <= 0:
 
 
 
-workbook = genXML(len(assets));
+workbook, ws = genXML(len(assets));
 
 for x in assets:
 	try:
@@ -115,15 +200,20 @@ for x in assets:
 			print("Error: {} not found.".format(x))
 			continue
 		
-		addServer(workbook,logpath, index);
+		addServer(ws,logpath, index);
 		index += 1;	
 		
 	except Exception:
 		print(traceback.print_exc());
 		print("Failed at S/N:"+x)
-		
 
-workbook.close()
+getInfoFromXML()	
+addInfoToXML(ws)
+genSingleXML()
+saveWorkBook(workbook,LogReader.Config["XLPath"])
+
+
+
 
 
 
