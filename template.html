@@ -123,7 +123,7 @@
             #pictureSlider li img {
 
                 max-width: 300px;
-                max-height: 300px;
+                max-height: 250px;
                 width: auto;
                 height: auto;
                 
@@ -164,6 +164,18 @@
 				width: 600px;
 				height: 200px
 			}
+            #hoverView {
+                position: Absolute;
+                width: 100px;
+                height: 80px;
+                background-color: black;
+                border-style: solid;
+                border-color: grey;
+                
+                font-color: white;
+                pointer-events:none;
+                
+            }
 			#ShowMoreView .ShowMoreItem {
 				
 				text-align:center;
@@ -175,7 +187,6 @@
 			.ShowMoreItem span {
 				font-style: normal;
 				font-weight: normal;
-				display:block;
 				font-size: 10px;
 				line-height:15px;
 				white-space:nowrap;
@@ -388,8 +399,9 @@
 				initWidget();
 				//document.getElementById("DebugElement").innerHTML = JSON.stringify(data);
 		}
-		
-							debugElem = null;
+		            mouseID = -1;
+		            
+					debugElem = null;
 					imgURLS = new Array();
 					imgPos = new Array();
 					imgX = new Array();
@@ -469,21 +481,36 @@
 					
 						divEnd = '</div>';
 					
-						for(var i=0; i<imgURLS.length; i++) {
- 
-							
-							widgetView.innerHTML += '<div class="ShowMoreItem" id='+i+'><a href="'+imgURLS[i]["itemURL"]+'"><img src="'+imgURLS[i]["imgURL"]+'" onclick="viewItem('+i+')"></a><span>'+imgURLS[i]["Title"]+'</span></div>';
-							
+						for(var i=0; i<imgURLS.length; i++) {							
+						    widgetView.innerHTML += '<div class="ShowMoreItem" id=' + i + '><a href="' + imgURLS[i]["itemURL"] + '"><img src="' + imgURLS[i]["imgURL"] + '" onclick="viewItem(' + i + ')"></a><span>' + imgURLS[i]["Title"] + '</span></div>';
+
 						}
 						window.setTimeout(loadHeights,100);
 					}
 					function loadHeights() {
-						
+					    hoverElement = document.getElementById("hoverView");
 						for(var i=0; i<imgURLS.length; i++) {
-							item = document.getElementById(i);
-							itemHeight[i] = item.offsetHeight;
+							itm = document.getElementById(i);
+							itemHeight[i] = itm.offsetHeight;
+							list = itm.getElementsByTagName("span");
+							for (var x = 0; x < list.length; x++) {
+							    list[x].style.position = "absolute";
+							}
 							
-							document.getElementById(i).childNodes[1].style.position = "Absolute";
+							//document.getElementById(i).childNodes[1].style.position = "Absolute";
+							//document.getElementById(i).addEventListener("mouseenter", function (event) {
+							//    mouseID = event.target.id;
+							//    hoverElement.style.display = "";
+							//});
+							//document.getElementById(i).addEventListener("mouseleave", function (event) {
+							//    mouseID = -1;
+							//    hoverElement.style.display = "none";
+							//});
+							//document.getElementById(i).addEventListener("mousemove", function (event) {
+							//    hoverElement.style.left = event.clientX - hoverElement.offsetWidth / 2;
+							//    hoverElement.style.top = event.clientY - hoverElement.offsetHeight;
+
+							//});
 							}
 							
 							Loaded = true;
@@ -526,9 +553,12 @@
 								xPos = counter * (itemSize[0] + 50);
 								
 							for(var i=0; i<widgetView.childNodes.length; i++) {
-								item = widgetView.childNodes[i];
+								itm = widgetView.childNodes[i];
 								
-								x =  (midOffset + i * (itemSize[0]+50)) - xPos;
+								x = (midOffset + i * (itemSize[0] + 50)) - xPos;
+
+								if (x < (itemSize[0] + 50 + midOffset)*-3 || x > (itemSize[0] + 50 + midOffset)*3)
+								    continue;
 								
 								if(x>= widgetView.offsetWidth)
 									x = (((imgURLS.length-1) * (itemSize[0]+50) - x) * -1) - (itemSize[0]+50);
@@ -538,15 +568,18 @@
 								radians = x / widgetView.offsetWidth * 180 * (Math.PI/180);
 								sin = Math.abs(Math.sin(radians));
 								
-								item.style.width = itemSize[0] * sin;
-								item.style.height = itemHeight[i] * sin;
-								item.childNodes[1].style.fontSize = sin*0.8 + "em";
-								item.childNodes[1].style.lineHeight = sin*15 + "px";
-								item.childNodes[1].style.left = (itemSize[0] * sin/2*-1 + item.childNodes[1].offsetWidth/2)*-1;
+								itm.style.width = itemSize[0] * sin;
+								itm.style.height = itemHeight[i] * sin;
+
+                                //It's probably bad that I'm accessing childNodes directly like this.... I'll fix it later -Jesse
+								itm.childNodes[1].style.fontSize = sin*0.8 + "em";
+								itm.childNodes[1].style.lineHeight = sin*15 + "px";
+								itm.childNodes[1].style.left = (itemSize[0] * sin / 2 * -1 + itm.childNodes[1].offsetWidth / 2) * -1;
+								itm.childNodes[1].style.top = itm.childNodes[0].childNodes[0].offsetHeight;
 								
-								item.style.top = widgetView.clientHeight/2 - (itemHeight[i]*sin/2);
-								item.style.left = x - itemSize[0] * sin / 2;
-								item.style.opacity = sin;
+								itm.style.top = widgetView.clientHeight/2 - (itemHeight[i]*sin/2);
+								itm.style.left = x - itemSize[0] * sin / 2;
+								itm.style.opacity = sin;
 								
 								
 							}
@@ -680,7 +713,7 @@
 			</div>
 		<div style="clear:both;"></div>
 		</div>
-		
+<!--		<div id="hoverView"></div>-->
 	</body>
 	
 </html>
