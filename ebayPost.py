@@ -1,6 +1,8 @@
 ﻿import ebaysdk
 import datetime
 import jwjson
+import jwargs
+import sqlite3
 import sys
 import os
 import ast
@@ -19,7 +21,7 @@ def init():
 
 
 
-
+dynamicPrice = False
 failFlag = False
 LogURL = False
 cfgOverride = {}
@@ -71,13 +73,22 @@ def getPictures(name):
 	return pictureList
 
 def mergeDictionary(dict1, dict2):
+
+	global cfgOverride
+
 	for k,v in dict2.items():
 		if not dict1.has_key(k):
-			dict1[k] = v;
+			if cfgOverride.has_key(k):
+				dict1[k] = cfgOverride[k]
+			else:
+				dict1[k] = v;
 		elif isinstance(v,dict):
 			mergeDictionary(dict1[k],v)
 		else:
-			dict1[k] = v;
+			if cfgOverride.has_key(k):
+				dict1[k] = cfgOverride[k]
+			else:
+				dict1[k] = v;
 
 def uploadPicture(fname):
 	try:
@@ -117,6 +128,8 @@ def getConfig(model,varName=None):
 		configFile = file(LogReader.getConfigValue("EbayConfig"),"r")
 		cValues = jwjson.loadJSON(configFile.read())
 		configFile.close()
+		if cfgOverride.has_key(varName):
+			return cfgOverride[varName]
 		if cValues.has_key(model):
 			if varName is None:
 				return cValues[model]
@@ -275,12 +288,15 @@ def printLine():
 
 def verifyPost(fname,postInfo,postTitle):
 
+	model = LogReader.getModel(fname)
 	pictures = getPictures(LogReader.getSerial(fname))
 	if len(pictures) <= 0:
 		pictures = getPictures(LogReader.getModel(fname))
 	printLine()
 	print("Picture #: {}".format(len(pictures)))
 	print("TITLE:{}".format(postTitle))
+	print "Buy It Now Price: ${}".format(getConfig(model,"BuyItNowPrice"))
+	print "Starting Price: ${}".format(getConfig(model,"StartPrice"))
 	printLine()
 	print("DESCRIPTION:\n{}".format(postInfo.replace("<br>","\n")))
 	while True:
@@ -294,12 +310,40 @@ def verifyPost(fname,postInfo,postTitle):
 		else:
 			print("Invalid input")
 
+def getPrice(fname):
+
+	warning = []
+	components = LogReader.getComponentList(fname)
+	price = 0
+	for component in components:
+		db = sqlite3.connect(LogReader.getConfigValue("PriceDB"))
+		cur = db.cursor()
+		query = "SELECT * FROM prices WHERE name ='{}'".format(component)
+		cur.execute(query)
+		db.commit()
+		row = cur.fetchone()
+		cur.close()
+		db.close()
+		if row is None:
+			e = "Warning: No price found for: {}".format(component)
+			if e not in warning:
+				warning.append(e)
+			continue
+		names = [description[0] for description in cur.description]
+		price += float(row[names.index("price")])
+	print "\n".join(warning)
+	return price
+
 def postItem(fname):  
 	try:
-		
+		global cfgOverride
 		model = LogReader.getModel(fname)
 		postTitle = genTitle(fname)
 		postInfo = genInfo(fname)
+		if dynamicPrice:
+			price = getPrice(fname)
+			cfgOverride["BuyItNowPrice"] = price
+			cfgOverride["StartPrice"] = int(price / 7)
 		if VerifyFlag:
 			if verifyPost(fname,postInfo,postTitle) is not None:
 				return
@@ -340,7 +384,6 @@ def postItem(fname):
 
 
 
-
 		d = api.execute('AddItem', myitem).dict()
 		
 		itemURL = getItemURL(d["ItemID"])
@@ -352,8 +395,6 @@ def postItem(fname):
 		printLine()
 		print(itemURL)
 		printLine()
-
-		#print(d.dict()["User"]["UserID"])
 		
 	except ConnectionError as e:
 		print(e)
@@ -368,25 +409,22 @@ init()
 dn = os.path.dirname(os.path.realpath(__file__))
 api = Connection(domain=getConfig("default","Domain"),config_file=os.path.join(dn,"ebay.yaml"))
 
-for argc in sys.argv:
-	if argc == sys.argv[0]: #Quick hack to stop it from getting the script name
-		continue
-
-
-
-	if argc == "-abs":
-		AbsolutePath = True
-	elif argc == "-?" or argc == "-h":
-		print("-v Verify posting before uploading")
-		print("-lt Force ListingType of item")
-	elif argc == "-endall":
-		endAllItems()
-	elif argc == "-v" or argc == "-verify":
-		VerifyFlag = True
-	elif argc[:3] == "-lt":
-		listingType = argc.split("=")[-1]
-		cfgOverride["ListingType"] = listingType
-	else:
+#Ends all active items.. WARNING
+def m_endall():
+	endAllItems()
+#Dynamic pricing based off the prices in Prices.db
+def m_p():
+	global dynamicPrice
+	dynamicPrice = True
+#Verifies listing before posting
+def m_v():
+	global VerifyFlag
+	VerifyFlag = True
+#Changes the listing type
+def m_lt(listingType):
+	global cfgOverride
+	cfgOverride["ListingType"] = listingType
+def default(argc):
 		if argc.find(".txt") > 0:
 			logFile = argc[0:argc.find(".txt")] + ".txt"
 		else:
@@ -396,12 +434,48 @@ for argc in sys.argv:
 		else:
 			logPath = argc
 		if logPath is not None:
-
 			if LogReader.getProcInfo(logPath) is None or LogReader.getTotalRam(logPath) is None:
 				print("Something went wrong with {}. Skipping".format(logPath))
-				continue
-
 			postItem(logPath)
 		else:
 			print("Could not find file {}".format(str(logFile)))
+
+
+jwargs.getArgs()
+#for argc in sys.argv:
+#	if argc == sys.argv[0]: #Quick hack to stop it from getting the script name
+#		continue
+
+
+
+#	if argc == "-abs":
+#		AbsolutePath = True
+#	elif argc == "-?" or argc == "-h":
+#		print("-v Verify posting before uploading")
+#		print("-lt Force ListingType of item")
+#	elif argc == "-endall":
+#		endAllItems()
+#	elif argc == "-v" or argc == "-verify":
+#		VerifyFlag = True
+#	elif argc[:3] == "-lt":
+#		listingType = argc.split("=")[-1]
+#		cfgOverride["ListingType"] = listingType
+#	else:
+#		if argc.find(".txt") > 0:
+#			logFile = argc[0:argc.find(".txt")] + ".txt"
+#		else:
+#			logFile = argc + ".txt"
+#		if not AbsolutePath:
+#			logPath = LogReader.getLogPath(str(logFile))
+#		else:
+#			logPath = argc
+#		if logPath is not None:
+
+#			if LogReader.getProcInfo(logPath) is None or LogReader.getTotalRam(logPath) is None:
+#				print("Something went wrong with {}. Skipping".format(logPath))
+#				continue
+
+#			postItem(logPath)
+#		else:
+#			print("Could not find file {}".format(str(logFile)))
 

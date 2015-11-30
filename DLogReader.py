@@ -247,6 +247,33 @@ def getAsset(serial):
 		
 	return '';
 
+def getComponentList(fname):
+	components = []
+	model = getModel(fname)
+	cpus = getProcInfo(fname)
+	hdds = getHarddrives(fname,True)
+	ram = getTotalRam(fname)
+	ramAmt = "".join(ram[3].split(" ")).split(",")
+	components.append(model)
+	components.append(getCtlr(fname))
+	for k,v in cpus.items():
+		for x in range(0,int(v)):
+			components.append(k)
+	for hd in hdds:
+		for x in range(0,int(hd[-2])):
+			components.append(hd[-1])
+	for r in ramAmt:
+		rSplit = r.split("x")
+		size = rSplit[0]
+		amount = rSplit[1]
+		for x in range(0,int(amount)):
+			rString = "{}-{}-{}".format(size,ram[1],ram[2])
+			components.append(rString)
+
+	return components
+
+	
+
 def getFails(fname):
 	serverlog = open(fname, 'r');
 	lString = getRecentLog(serverlog.read());
@@ -360,7 +387,7 @@ def getHDInterface(fname):
 	return lString.group(1)
 		
 			
-def getHarddrives(fname):
+def getHarddrives(fname,includeModels=False):
 	serverlog = open(fname, 'r');
 	lString = getRecentLog(serverlog.read());
 
@@ -379,6 +406,8 @@ def getHarddrives(fname):
 
 	for k,v in hddDict.items():
 		HDInfo = getHDInfo(k) + (v,)
+		if includeModels:
+			HDInfo += (k,)
 		returnList.append(HDInfo)
 
 	return returnList
@@ -455,9 +484,9 @@ def getTotalRam(fname):
 				ramSize += int(x);
 				if int(x) > 0:
 					try:
-						dimms[str(int(int(x)/1000))] += 1
+						dimms[str(int(int(x)/1024))] += 1
 					except KeyError:
-						dimms[str(int(int(x)/1000))] = 1;
+						dimms[str(int(int(x)/1024))] = 1;
 			except ValueError:
 				continue;
 	except AttributeError:
@@ -467,8 +496,8 @@ def getTotalRam(fname):
 	serverlog.close();
 	
 	ramStr = ""
-	if ramSize >= 1000:
-		ramStr = str(int(int(ramSize)/1000)) + "GB"
+	if ramSize >= 1024:
+		ramStr = str(int(int(ramSize)/1024)) + "GB"
 	else:
 		ramStr = str(ramSize) + "MB"
 	
@@ -495,23 +524,36 @@ def getFullHDString(HDarray):
 
 	return ",\n".join(HDset)
 
-def genInfo(fname):
+def genInfo(fname,returnList=False,modelOnly=False):
 
 	ramInfo = getTotalRam(fname)
 	procInfo = getProcInfo(fname)
 	if procInfo is not None:
-		ret =  ",\n".join(["{} x{}".format(k,v) for k,v in procInfo.items()])  + ",\n"
+		procString =  ",\n".join(["{} x{}".format(k,v) for k,v in procInfo.items()])
+		if modelOnly:
+			search = re.search(r"Intel\(R\) Xeon\(R\) CPU (.*)",procString)
+			if search is not None:
+				procString = search.group(1)
 	else:
-		ret = "CPU not found\n"
+		procString = "CPU not found"
 	if ramInfo is not None:
-		ret += "{} {} {} ({}),\n".format(*ramInfo)
+		ramString = "{} {} {} ({})".format(*ramInfo)
 	else:
-		ret += "No RAM Found\n"
-	ret += getCtlr(fname) + ",\n"
+		ramString = "No RAM Found"
 
-	ret += getFullHDString(getHarddrives(fname))
+	ctrl = getCtlr(fname)
+
 	
-	return ret;
+
+	hdds = getFullHDString(getHarddrives(fname))
+
+	li = [procString, ramString, ctrl, hdds]
+
+	if returnList:
+		return li
+	
+	
+	return ",\n".join(li)
 
 def getConfigValue(name):
 	if Config.has_key(name):

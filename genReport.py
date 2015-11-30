@@ -19,24 +19,29 @@ import DLogReader as LogReader
 
 serverList = []
 masterServerList = []
+colNames = ["Service Tag", "Asset", "Model", "CPU", "RAM","Controller", "HDD", "Fails", "Notes"]
 
 def formatXML(workbook, worksheet,rnum):
-	
+	global colNames
 	headerStyle = xlwt.Style.easyxf("font: bold on; align: wrap on, vert centre, horiz center")
+
 	worksheet.col(0).width = 15 * 256
 	worksheet.col(1).width = 15 * 256
 	worksheet.col(2).width = 15 * 256
-	worksheet.col(3).width = 50 * 256
-	worksheet.col(4).width = 40 * 256
-	worksheet.col(5).width = 50 * 256
+	for i in range(3,8):
+		worksheet.col(i).width = 50 * 256
 	worksheet.row(0).height = 20 * 256
-	worksheet.write(0,0, "Service Tag",headerStyle);
-	worksheet.write(0,1, "Asset",headerStyle);
-	worksheet.write(0,2, "Model",headerStyle);
-	worksheet.write(0,3, "Specs",headerStyle);
-	worksheet.write(0,4, "Notes",headerStyle);
-	worksheet.write(0,5, "Fails",headerStyle);
-	
+	for i in range(len(colNames)):
+		worksheet.write(0,i, colNames[i],headerStyle);
+
+	#worksheet.write(0,1, "Asset",headerStyle);
+	#worksheet.write(0,2, "Model",headerStyle);
+	#worksheet.write(0,3, "CPU",headerStyle);
+	#worksheet.write(0,4, "RAM",headerStyle);
+	#worksheet.write(0,5, "HDD",headerStyle);
+	#worksheet.write(0,6, "Controller",headerStyle);
+	#worksheet.write(0,7, "Fails",headerStyle);
+	#worksheet.write(0,8, "Notes",headerStyle);
 	return
 
 
@@ -50,8 +55,11 @@ def formatXML2(workbook,worksheet,rnum):
 	font_format.set_font_size(10);
 	worksheet.set_column(0,2,15);
 	worksheet.set_column(3,3,50,font_format);
-	worksheet.set_column(4,4,40,font_format);
+	worksheet.set_column(4,4,50,font_format);
 	worksheet.set_column(5,5,50,font_format);
+	worksheet.set_column(6,6,50,font_format);
+	worksheet.set_column(7,7,50,font_format);
+	worksheet.set_column(8,8,50,font_format);
 	worksheet.set_row(0,20,cell_format)
 	for x in range(1,rnum):
 		worksheet.set_row(x,53);
@@ -59,9 +67,12 @@ def formatXML2(workbook,worksheet,rnum):
 	worksheet.write(0,0, "Service Tag");
 	worksheet.write(0,1, "Asset");
 	worksheet.write(0,2, "Model");
-	worksheet.write(0,3, "Specs");
-	worksheet.write(0,4, "Fails");
-	worksheet.write(0,5, "Notes");
+	worksheet.write(0,3, "CPU");
+	worksheet.write(0,4, "RAM");
+	worksheet.write(0,5, "HDD");
+	worksheet.write(0,6, "Controller");
+	worksheet.write(0,7, "Fails");
+	worksheet.write(0,8, "Notes");
 	
 	return;
 	
@@ -79,9 +90,10 @@ def addServer(worksheet, fname, index):
 
 	serial = LogReader.getSerial(fname);
 	index += 1;
-
-	serverList.append((serial,LogReader.getAsset(serial),LogReader.getModel(fname),LogReader.genInfo(fname),LogReader.getFails(fname)))
-
+	
+	serverList.append([serial,LogReader.getAsset(serial),LogReader.getModel(fname)]+LogReader.genInfo(fname,True,True)+[LogReader.getFails(fname),])
+	if index == 1:
+		print serverList
 	#worksheet.write(index,0, serial);
 	#worksheet.write(index,1, LogReader.getAsset(serial));
 	#worksheet.write(index,2, LogReader.getModel(fname));
@@ -95,10 +107,31 @@ def getInfoFromXML():
 		sh = wb.sheet_by_index(0)
 		num_rows = sh.nrows
 		for x in range(1,num_rows):
-			masterServerList.append((sh.cell(x,0).value,sh.cell(x,1).value,sh.cell(x,2).value,sh.cell(x,3).value,sh.cell(x,4).value,sh.cell(x,5).value))
+			masterServerList.append([sh.cell(x,i).value for i in range(sh.ncols)])
+			#masterServerList.append((sh.cell(x,0).value,sh.cell(x,1).value,sh.cell(x,2).value,sh.cell(x,3).value,sh.cell(x,4).value,sh.cell(x,5).value))
 	except Exception:
 		return
 		
+def getColWidth(list):
+
+	global colNames
+
+	numCols = 0
+
+	colWidths = [len(colNames[x]) for x in range(len(colNames))]
+	
+	for i in range(0,len(list)):	
+		for x in range(0,len(list[i])):
+			split = list[i][x].split("\n")
+			for s in split:
+				if len(s) > colWidths[x]:
+					colWidths[x] = len(s)
+
+	return colWidths
+
+def resizeSheet(sheet, colWidths):
+	for i in range(0,len(colWidths)):
+		sheet.col(i).width = (1+colWidths[i]) * 256
 
 
 def addInfoToXML(worksheet):
@@ -111,11 +144,24 @@ def addInfoToXML(worksheet):
 				masterServerList.pop(masterServerList.index(info))
 
 	list = masterServerList + serverList;
+
+	font = xlwt.Font()
+	font.name = 'Verdana'
+	font.height = 10 * 20
+	style = xlwt.XFStyle()
+	style.font = font
+
+	colWidths = getColWidth(list)
+
+	resizeSheet(worksheet,colWidths)
 	
+
+
 	for i in range(1,len(list)+1):
-		
 		for x in range(0,len(list[i-1])):
 			worksheet.write(i,x, list[i-1][x])
+
+
 
 def genSingleXML():
 	global serverList
