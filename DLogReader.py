@@ -400,7 +400,11 @@ def getHarddrives(fname,includeModels=False):
 	for field in infoFields:
 		modelSearch = re.search(r"Product.*?: (.*?)\n", field)
 		if modelSearch is not None:
-			hddList.append(modelSearch.group(1))
+			model = modelSearch.group(1)
+			modelStrip = re.search(r"(?:^|\s)(\S*?)(?:-|$)",model)
+			if modelStrip is not None:
+				model = modelStrip.group(1)
+			hddList.append(model)
 	
 	hddDict = dict(Counter(hddList))
 
