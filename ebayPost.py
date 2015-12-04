@@ -322,8 +322,13 @@ def postItem(fname):
 		postInfo = genInfo(fname)
 		if dynamicPrice:
 			price = prices.getPrice(fname)
-			cfgOverride["BuyItNowPrice"] = price
-			cfgOverride["StartPrice"] = int(price / 7)
+			
+			if getConfig(model,"ListingType") == "FixedPriceItem":
+				
+				cfgOverride["StartPrice"] = int(price)
+			else:
+				cfgOverride["BuyItNowPrice"] = int(price)
+				cfgOverride["StartPrice"] = int(price / 7)
 		if VerifyFlag:
 			if verifyPost(fname,postInfo,postTitle) is not None:
 				return
@@ -359,10 +364,8 @@ def postItem(fname):
 			myitem["Item"]["PictureDetails"] = {"PictureURL": [x for x in pictureURLs]}
 
 		
+		
 		myitem = setItemConfig(model,myitem)
-
-
-
 
 		d = api.execute('AddItem', myitem).dict()
 		
