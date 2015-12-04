@@ -6,6 +6,8 @@ import sqlite3
 import sys
 import os
 import ast
+import prices
+
 import DLogReader as LogReader
 from ebaysdk.utils import getNodeText
 from ebaysdk.trading import Connection
@@ -319,7 +321,7 @@ def postItem(fname):
 		postTitle = genTitle(fname)
 		postInfo = genInfo(fname)
 		if dynamicPrice:
-			price = getPrice(fname)
+			price = prices.getPrice(fname)
 			cfgOverride["BuyItNowPrice"] = price
 			cfgOverride["StartPrice"] = int(price / 7)
 		if VerifyFlag:
