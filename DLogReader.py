@@ -247,30 +247,7 @@ def getAsset(serial):
 		
 	return '';
 
-def getComponentList(fname):
-	components = []
-	model = getModel(fname)
-	cpus = getProcInfo(fname)
-	hdds = getHarddrives(fname,True)
-	ram = getTotalRam(fname)
-	ramAmt = "".join(ram[3].split(" ")).split(",")
-	components.append(model)
-	components.append(getCtlr(fname))
-	for k,v in cpus.items():
-		for x in range(0,int(v)):
-			components.append(k)
-	for hd in hdds:
-		for x in range(0,int(hd[-2])):
-			components.append(hd[-1])
-	for r in ramAmt:
-		rSplit = r.split("x")
-		size = rSplit[0]
-		amount = rSplit[1]
-		for x in range(0,int(amount)):
-			rString = "{}-{}-{}".format(size,ram[1],ram[2])
-			components.append(rString)
 
-	return components
 
 	
 
@@ -307,13 +284,42 @@ def getLogPath(fname):
 			if file.lower() == fname.lower():
 				print(os.path.join(root, file));
 				return os.path.join(root, file);	
+
+def getHDSpeed(model):
+	db = sqlite3.connect(getConfigValue("DBPath"))
+	cur = db.cursor()
+	query = "SELECT * FROM harddrives WHERE model = '{}'".format(model)
+	cur.execute(query)
+	db.commit()
+	hd = cur.fetchone()
+	names = [desc[0] for desc in cur.description]
+	speedIndex = names.index("speed")
+	speed = hd[speedIndex]
+	s = re.search(r"(\d*)(?:\D|$)",speed)
+	if s is not None:
+		speed = s.group(1)
+		ispeed = int(speed)
+		if ispeed > 1000:
+			s = float(ispeed)/1000
+			if ispeed % 1000 == 0:
+				return "{}k".format(int(s))
+			elif int(s) == 10:
+				return "{}k".format(int(s))
+			else:
+				return "{:.1f}k".format(float(ispeed)/1000)
+	return speed
 	
-	
-def getCtlr(fname):
+def getCtlr(fname,SFF=False):
 	serverlog = open(fname, 'r');
 	lString = getRecentLog(serverlog.read());
 	try:
 		lString = re.search(r"Ctlr\n-*?\n(.*?),",lString,re.MULTILINE | re.DOTALL).group(1);
+		if SFF:
+			split = lString.split(" ")[:2]
+			if re.search(r"[[a-zA-Z]\d\d\d",split[-1]) is not None:
+				lString = split[-1]
+			else:
+				lString = "".join(lString.split(" ")[:2])
 	except AttributeError:
 		lString = "No raid controller"
 	serverlog.close();
@@ -341,7 +347,15 @@ def getProcInfo(fname):
 		
 		regEx = r"\nManufacturer.*?: (.*?)\n[\s\S]{0,90}\nVersion.*?: (.*?)\n"
 		cpuList = re.findall(regEx,lString)
+		
 		infoList = [" ".join(x.split()) if y == "N/A" else " ".join(y.split()) for x,y in cpuList]
+
+		for i in range(len(infoList)):
+			search = re.search(r"CPU\s+?(\b.*?)\s",infoList[i])
+			if search is not None:
+				infoList[i] = search.group(1)
+
+
 		count = dict(Counter(infoList))
 		if count.has_key("N/A"):
 			count.pop("N/A")
@@ -522,22 +536,17 @@ def getFullHDString(HDarray):
 	
 	if HDarray is None:
 		return "No HDD's"
-
 	for HD in HDarray:
 		HDset.append("{} ({}, {}, {}) x{}".format(*HD))
-
 	return ",\n".join(HDset)
 
-def genInfo(fname,returnList=False,modelOnly=False):
-
+def genInfo(fname,returnList=False):
 	ramInfo = getTotalRam(fname)
 	procInfo = getProcInfo(fname)
 	if procInfo is not None:
 		procString =  ",\n".join(["{} x{}".format(k,v) for k,v in procInfo.items()])
-		if modelOnly:
-			search = re.search(r"Intel\(R\) Xeon\(R\) CPU (.*)",procString)
-			if search is not None:
-				procString = search.group(1)
+
+
 	else:
 		procString = "CPU not found"
 	if ramInfo is not None:

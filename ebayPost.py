@@ -310,29 +310,7 @@ def verifyPost(fname,postInfo,postTitle):
 		else:
 			print("Invalid input")
 
-def getPrice(fname):
 
-	warning = []
-	components = LogReader.getComponentList(fname)
-	price = 0
-	for component in components:
-		db = sqlite3.connect(LogReader.getConfigValue("PriceDB"))
-		cur = db.cursor()
-		query = "SELECT * FROM prices WHERE name ='{}'".format(component)
-		cur.execute(query)
-		db.commit()
-		row = cur.fetchone()
-		cur.close()
-		db.close()
-		if row is None:
-			e = "Warning: No price found for: {}".format(component)
-			if e not in warning:
-				warning.append(e)
-			continue
-		names = [description[0] for description in cur.description]
-		price += float(row[names.index("price")])
-	print "\n".join(warning)
-	return price
 
 def postItem(fname):  
 	try:

@@ -91,9 +91,10 @@ def addServer(worksheet, fname, index):
 	serial = LogReader.getSerial(fname);
 	index += 1;
 	
-	serverList.append([serial,LogReader.getAsset(serial),LogReader.getModel(fname)]+LogReader.genInfo(fname,True,True)+[LogReader.getFails(fname),])
+	serverList.append([serial,LogReader.getAsset(serial),LogReader.getModel(fname)]+LogReader.genInfo(fname,True)+[LogReader.getFails(fname),])
 	if index == 1:
 		print serverList
+
 	#worksheet.write(index,0, serial);
 	#worksheet.write(index,1, LogReader.getAsset(serial));
 	#worksheet.write(index,2, LogReader.getModel(fname));
@@ -151,6 +152,7 @@ def addInfoToXML(worksheet):
 	style = xlwt.XFStyle()
 	style.font = font
 
+
 	colWidths = getColWidth(list)
 
 	resizeSheet(worksheet,colWidths)
@@ -180,6 +182,7 @@ def saveWorkBook(workbook, path):
 		if saveIndex > 0:
 			p = "{} ({}){}".format(filename,saveIndex,extension)
 		try:
+
 			workbook.save(p)
 			print("Saved {}".format(p))
 			break
