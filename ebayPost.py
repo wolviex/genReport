@@ -7,7 +7,7 @@ import sys
 import os
 import ast
 import prices
-
+import ebayTools
 import DLogReader as LogReader
 from ebaysdk.utils import getNodeText
 from ebaysdk.trading import Connection
@@ -53,7 +53,7 @@ def dump(api, full=False):
 
 def getPictures(name):
 	realpath = os.path.dirname(os.path.realpath(sys.argv[0]))
-	pictureCfg = getConfig("default","PictureInfo")
+	pictureCfg = ebayTools.getConfig("default","PictureInfo")
 	picPath = pictureCfg["Path"];
 	fileTypes = pictureCfg["FileTypes"].split(",")
 	pictureList = []
@@ -117,57 +117,18 @@ def uploadPicture(fname):
 
 
 def getAPICommandList():
-	print getConfig("default","APICommandList")
-	commandListFile = file(getConfig("default","APICommandList"),"r")
+	
+	commandListFile = file(ebayTools.getConfig("default","APICommandList"),"r")
 	commandList = ast.literal_eval(commandListFile.read())
 	commandListFile.close()
 	return commandList
 
 
 
-def getConfig(model,varName=None):
-	try:
-		configFile = file(LogReader.getConfigValue("EbayConfig"),"r")
-		cValues = jwjson.loadJSON(configFile.read())
-		configFile.close()
-		if cfgOverride.has_key(varName):
-			return cfgOverride[varName]
-		if cValues.has_key(model):
-			if varName is None:
-				return cValues[model]
-			if cValues[model].has_key(varName):
-				print(cValues[model][varName])
-				if type(cValues[model][varName]) is str or type(cValues[model][varName]) is unicode:
-					
-					if cValues[model][varName][:2] == "./":
-						realpath = os.path.dirname(os.path.realpath(sys.argv[0]))
-						
-						return realpath + cValues[model][varName][1:]
 
-				return cValues[model][varName]
-
-		if cValues.has_key("default"):
-			if varName is None:
-				return cValues["default"]
-			if cValues["default"].has_key(varName):
-				if type(cValues["default"][varName]) is str or type(cValues["default"][varName]) is unicode:
-					
-					if cValues["default"][varName][:2] == "./":
-						realpath = os.path.dirname(os.path.realpath(sys.argv[0]))
-						return realpath + cValues["default"][varName][1:]
-
-				return cValues["default"][varName]
-
-		print("Warning: Could not find any config for {}".format(varName))
-		return None
-
-	except Exception as e:
-		print("Warning: Could not load config file!")
-		print(e)
-		return None
 
 def genInfo(fname):
-	notes = getConfig(LogReader.getModel(fname),"SpecialNotes")
+	notes = ebayTools.getConfig(LogReader.getModel(fname),"SpecialNotes")
 	info = LogReader.genInfo(fname).replace(",\n","<br>");
 	info += "<br>"
 	if notes is not None:
@@ -231,7 +192,7 @@ def addItemSpecific(name,value, specList):
 def genItemSpecifics(fname):
 	model = LogReader.getModel(fname)
 
-	mConfig = getConfig(model,"ItemSpecifics")
+	mConfig = ebayTools.getConfig(model,"ItemSpecifics")
 	specList = []
 	specDict = {}
 	if mConfig is not None:
@@ -271,8 +232,8 @@ def setItemConfig(model, item):
 		mergeDictionary(tempDict["Item"],cfgDict)
 		return tempDict
 
-	defaultCfg = getConfig("default")
-	modelCfg  = getConfig(model)
+	defaultCfg = ebayTools.getConfig("default")
+	modelCfg  = ebayTools.getConfig(model)
 
 	if defaultCfg is not None:
 		item = f(defaultCfg,item)
@@ -297,8 +258,8 @@ def verifyPost(fname,postInfo,postTitle):
 	printLine()
 	print("Picture #: {}".format(len(pictures)))
 	print("TITLE:{}".format(postTitle))
-	print "Buy It Now Price: ${}".format(getConfig(model,"BuyItNowPrice"))
-	print "Starting Price: ${}".format(getConfig(model,"StartPrice"))
+	print "Buy It Now Price: ${}".format(ebayTools.getConfig(model,"BuyItNowPrice"))
+	print "Starting Price: ${}".format(ebayTools.getConfig(model,"StartPrice"))
 	printLine()
 	print("DESCRIPTION:\n{}".format(postInfo.replace("<br>","\n")))
 	while True:
@@ -323,7 +284,7 @@ def postItem(fname):
 		if dynamicPrice:
 			price = prices.getPrice(fname)
 			
-			if getConfig(model,"ListingType") == "FixedPriceItem":
+			if ebayTools.getConfig(model,"ListingType") == "FixedPriceItem":
 				
 				cfgOverride["StartPrice"] = int(price)
 			else:
@@ -390,7 +351,7 @@ VerifyFlag = False
 init()	
 
 dn = os.path.dirname(os.path.realpath(__file__))
-api = Connection(domain=getConfig("default","Domain"),config_file=os.path.join(dn,"ebay.yaml"))
+api = Connection(domain=ebayTools.getConfig("default","Domain"),config_file=os.path.join(dn,"ebay.yaml"))
 
 #Ends all active items.. WARNING
 def m_endall():
