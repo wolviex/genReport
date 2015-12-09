@@ -10,13 +10,6 @@ def onConnect(e):
 def onData(packet):
 	print "Data: {}".format(packet.decoded)
 
-def cmd_test(packet):
-	d = {"test":"Yo","Bro":{"No":"Ye"}}
-	js = json.dumps(d)
-	sendPacket = websocket.PacketHandler.Packet(packet.usr)
-	sendPacket.decoded = "/test {}".format(js)
-	packet.usr.send_packet = sendPacket
-
 
 def cmd_getEbayListings(packet):
 	print "Sending ebay list"
