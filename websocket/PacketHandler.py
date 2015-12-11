@@ -2,7 +2,6 @@
 import socket
 import binascii
 import re
-import test
 global curPacketHandler
 
 class Packet(object):

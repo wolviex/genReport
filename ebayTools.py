@@ -78,7 +78,12 @@ def getAllListings():
 	f2 = False
 	ret = []
 	for listing in query:
-		for item in listing["ItemArray"]["Item"]:
-			if type(item) is not str:
-				ret.append([item["Title"],item["ListingDetails"]["ViewItemURL"],item["ItemID"]])
+
+		try:
+			for item in listing["ItemArray"]["Item"]:
+				if type(item) is not str:
+					ret.append([item["Title"],item["ListingDetails"]["ViewItemURL"],item["ItemID"]])
+		except AttributeError as e:
+			pass
+
 	return ret

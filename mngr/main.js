@@ -19,9 +19,9 @@ var socket
 function init() {
 
     
-    socket = new WebSocket("ws://192.168.56.1:9999")
+    socket = new WebSocket("ws://104.238.129.237:80")
     socket.onopen = function () {
-       socket.send("/getEbayListings")
+        socket.send("/getEbayListings")
     };
     socket.onmessage = function (event) {
 

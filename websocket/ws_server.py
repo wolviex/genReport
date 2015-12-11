@@ -39,6 +39,7 @@ class Server(object):
 	connections = []
 
 	onConnect = []
+	onDisconnect = []
 	onRecieve = []
 
 	def __init__(self,ip,port):
@@ -81,6 +82,12 @@ class Server(object):
 			self.packetHandler.update()
 			time.sleep(0.5)
 
+	def clientDisconnect(self, packet):
+		print "{} Disconnected".format(packet.usr.address[0])
+		id = self.connections.index(packet.usr)
+		packet.usr.s.close()
+		self.connections.pop(id)
+
 	def recievePacket(self, packet):
 		cmdSearch = re.search(r"/([a-zA-Z0-9_]*?)(?:\s|$)",packet.decoded)
 		if cmdSearch is not None:
@@ -91,8 +98,12 @@ class Server(object):
 					f(packet)
 					if not self.logCommands:
 						return
-
-
+		if len(packet.decoded) == 2:
+			if [ord(x) for x in packet.decoded] == [3,233]:
+				self.clientDisconnect(packet)
+				for f in self.onDisconnect:										
+					f(packet)
+				
 			
 
 		for f in self.onRecieve:
