@@ -369,7 +369,7 @@ def getProcInfo(fname):
 
 def getProcCores(fname):
 	serverlog = open(fname, 'r');
-	lString = serverlog.read()
+	lString = getRecentLog(serverlog.read())
 	ret = ""
 	try:
 		lString = re.search(r"Processor Information.*?System Information",lString,flags=re.MULTILINE | re.DOTALL).group(0);
@@ -382,7 +382,7 @@ def getProcCores(fname):
 
 def getProcSpeed(fname):
 	serverlog = open(fname, 'r');
-	lString = serverlog.read()
+	lString = getRecentLog(serverlog.read())
 	ret = ""
 	try:
 		lString = re.search(r"Processor Information.*?System Information",lString,flags=re.MULTILINE | re.DOTALL).group(0);
