@@ -1,6 +1,7 @@
 ﻿import re
 from datetime import date
 from collections import Counter
+import numpy
 
 
 def mJoin(s1,s2,list):
@@ -41,3 +42,19 @@ def wordDistance(str1, str2):
 	word2list = str2.split(" ")
 	w1Len = len(word1List)
 	w2Len = len(word2list)
+
+def filterArray(array, *filters):
+	fil = [numpy.where(array[0]==f)[0][0] for f in filters]
+	if len(filters) > 0:
+		return array[:,fil]
+	else:
+		return array
+
+
+#TODO
+#Make a universal config system
+def getConfig(name):
+	f = file("ServerIdentity.txt","r")
+	j = f.read()
+	f.close()
+	return j

@@ -8,4 +8,11 @@ handshake += "Connection: Upgrade\r\n"
 handshake += "Sec-WebSocket-Accept: {}\r\n\r\n"
 
 from .ws_server import Server
+from .HTML5App import HTML5App
+from .serverBuilder import serverBuilder
 import PacketHandler
+
+
+class ObjectType:
+	_int,_float,_str,_func,_element,_array = [chr(x) for x in range(1,7)]
+	

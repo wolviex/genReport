@@ -2,7 +2,10 @@
 {
 	width:100%
 }
-
+#topPadding {
+	height: 25px;
+	width: 100%;
+}
 #toolBar
 {
 	width:100%;

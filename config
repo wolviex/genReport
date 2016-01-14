@@ -1,5 +1,7 @@
-ServerPath=/srv/testdata/joeservers/dell;
-DBPath=/srv/testdata/joeservers/hdDatabase.db;
-XLPath=/srv/testdata/joeservers/servers.xlsx;
+ServerPath=./;
+DBPath=./hdDatabase.db;
+XLPath=./servers.xlsx;
 EbayConfig=./ebayConfig;
 PriceDB=./Prices.db;
+
+helo
