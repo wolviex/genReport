@@ -1,0 +1,73 @@
+{	
+	"R610": #TBD naming convention
+	{
+		"Description":"PowerEdge R610(6x 2.5') Chassis, 1RU",
+		"CPU":
+		{
+			"Description":"Processor(s)",
+			"Default":"E5645",
+			"DefaultQty":"2",
+			"Qty":"2", #These are max qty, script MUST enforce limit
+			"Type":["CPU-5600","CPU-5500"]
+		},
+		"RAM":
+		{
+			"Description":"System Memory",
+			"Default":"8gb",
+			"DefaultQty":"=CPU QTY", #if this is a pain, then ignore default qty
+			"Qty":"12", 
+			"Type":"DDR3"
+		},
+		"RAID":
+		{
+			"Description":"Internal Drive controller",
+			"Default":"PERC6/i",
+			"Qty":"1",
+			"Type":"RAID-11G"
+		},
+		"HDD":
+		{
+			"Qty":"6",
+			"Description":"Hard Drives",
+			"Form Factor":["SFF","2.5"],
+			"Default":"No HDD"
+			#"Interface":"SAS",  #May be future implementation.
+			#"Interface":"SATA",
+			#"Interface":"SSD"
+		},
+		"PCIe":
+		{
+			"Description":"Expansion Slot",
+			"Default":"No Expansion Cards",
+			"Qty":"3",
+			"Type":"PCIe"
+		},
+		"iDRAC": #Same situation as PSU, RAILS
+		{
+			"Description":"Integrated Remote Access Controller(iDRAC)",
+			"Default":"iDRAC Express included.",
+			"Type":"iDRAC",
+			"Qty":"1"
+		},
+		"PSU":
+		{
+			"Description":"System Power Supplies. Wattage will be based on configuration requirements.",
+			"DefaultQty":"2",
+			"Qty":"2",
+			"Type":"PSU"
+			#If Qty=1 Display "Single, Non-Redundant Power Supply"; if Qty=2 Display "Dual, Redundant Power Supplies"
+		},
+		"RAILS":
+		{
+			"Description":"Rack Mounting",
+			"Qty":"1",
+			"Type":"Rails"
+		},
+		"Addon":
+		{
+			"Description":"Additional Items"
+		}
+	} # End R610
+}
+	
+		

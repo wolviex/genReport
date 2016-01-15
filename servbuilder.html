@@ -1,0 +1,46 @@
+	<link rel="stylesheet" type="text/css" href="mngr/servbuilder.css">
+	<script src="mngr/servbuilder.js"></script>
+
+	<div id="sContainer" class="networkEnabled">
+        
+		<table id="itemTable" class="network_select">
+			<tbody>
+				<tr>
+					<td style="border-style:none;"></td><td>Chassis:</td><td><select class="itemSelect" name="Model"></select></td>
+				</tr>
+				<tr>
+					<td style="border-style:none;"></td><td>CPU:</td><td><select class="itemSelect" name="CPU"></select></td>
+				</tr>
+				<tr>
+					<td style="border-style:none; text-align:right;"><button class="remButton" onclick="sb_test();">-</button><button class="addButton">+</button></td><td>RAM:</td><td><select class="itemSelect" name="RAM"></select></td><td><input type="text" maxlength="2" size="1" onkeyup="qtyChanged(this);" onchange="qtyChanged(this);" class="qtyBox" value ="1"/></td>
+				</tr>
+				<tr>
+					<td style="border-style:none;"></td><td>RAID:</td><td><select class="itemSelect" name="RAID"></select></td>
+				</tr>
+				<tr>
+					<td style="border-style:none; text-align:right;"><button class="remButton" onclick="remButtonClicked(this);">-</button><button class="addButton" onclick="addButtonClicked(this)">+</button></td><td>HDD:</td><td><select class="itemSelect" name="HDD"></select></td><td><input type="text" maxlength="2" size="1" onkeyup="qtyChanged(this);" onchange="qtyChanged(this);" class="qtyBox" value ="1"/></td>
+				</tr>
+				<tr>
+					<td style="border-style:none;"></td><td>PCI-E SLOT:</td><td><select class="itemSelect" name="PCIe"></select></td>
+				</tr>
+				<tr>
+					<td style="border-style:none;"></td><td>Remote Access:</td><td><select class="itemSelect" name="iDRAC"></select></td>
+				</tr>
+				<tr>
+					<td style="border-style:none;"></td><td>Power Supply:</td><td><select class="itemSelect" name="PSU"></select></td>
+				</tr>
+				<tr>
+					<td style="border-style:none; text-align:right;"><button class="remButton" onclick="remButtonClicked(this);">-</button><button class="addButton" onclick="addButtonClicked(this)">+</button></td></td><td>Addons:</td><td><select class="itemSelect" name="Addon"></select></td>
+				</tr>
+
+			</tbody>
+		</table>
+        <br />
+        <table id="sPrice">
+            <tbody>
+                <tr>
+                    <td>Cost: $</td><td><input type="text" id="sCost" readonly="readonly"/></td><td>Quote Price: $</td><td><input style="text" id="sQuote" name="sQuote" readonly/></td>
+                </tr>
+            </tbody>
+        </table>
+	</div>
